@@ -14,6 +14,8 @@
   const PHRASES = window.WRITING_PHRASES || [];
   const SCORING = window.WRITING_SCORING || [];
   const MODEL = window.WRITING_MODEL_ANSWER || null;
+  const EXAMPLE = window.WRITING_EXAMPLE || null;
+  const VIDEOS = window.WRITING_VIDEOS || {};
   const AI_URL = String(window.WRITING_AI_URL || "").replace(/\/$/, "");
 
   const SENTENCE_ROLES = [
@@ -69,6 +71,7 @@
   async function init() {
     bindStaticEvents();
     renderTutorial();
+    setupTutorialVideo();
     renderPhraseList("");
     initFirebase();
 
@@ -656,6 +659,7 @@
 
   async function finishTutorial() {
     closeModal("tutorial-modal");
+    $("#tutorial-video").pause();
     if (moduleState.tutorialDone) return;
     moduleState.tutorialDone = true;
     await persistModule().catch(() => {});
@@ -710,7 +714,65 @@
   }
 
   function findTopic(id) {
+    if (EXAMPLE && id === EXAMPLE.topic.id) return EXAMPLE.topic;
     return TOPICS.find((topic) => topic.id === id) || null;
+  }
+
+  // 例題のカード（書くのいちばん上）。解き方の動画と、書いてみるボタン
+  function exampleCardHtml() {
+    if (!EXAMPLE) return "";
+    const topic = EXAMPLE.topic;
+    const mine = records.filter((record) => record.topicId === topic.id);
+    const doneCount = mine.filter((record) => record.status === "done").length;
+    const draft = mine.find((record) => record.status !== "done");
+    const write = draft
+      ? `<button class="btn btn-primary btn-small" data-resume="${escapeAttr(draft.id)}">続きから</button>`
+      : `<button class="btn btn-primary btn-small" data-start="${escapeAttr(topic.id)}">書いてみる</button>`;
+    return `
+      <article class="topic-card example-card">
+        <div class="topic-card-head">
+          <span class="example-badge">例題</span>
+          ${doneCount ? `<span class="badge badge-done">完了 ${doneCount}回</span>` : ""}
+          ${draft ? `<span class="badge badge-draft">書きかけ</span>` : ""}
+        </div>
+        <h3>${escapeHtml(topic.en)}</h3>
+        <p class="topic-ja">${escapeHtml(topic.ja)}</p>
+        <p class="topic-points">POINTS：${topic.points.map(escapeHtml).join(" / ")}</p>
+        <p class="example-note">まずはこの例題で、解き方を動画で見てから書いてみよう。</p>
+        <div class="topic-actions">
+          <button class="btn btn-secondary btn-small" data-example-video>▶ 解き方の動画</button>
+          ${write}
+        </div>
+      </article>`;
+  }
+
+  function openVideo(key) {
+    const item = VIDEOS[key];
+    if (!item) {
+      showToast("解き方の動画は準備中です");
+      return;
+    }
+    const video = $("#video-player");
+    if (video.getAttribute("src") !== item.src) {
+      video.src = item.src;
+      video.poster = item.poster || "";
+    }
+    $("#video-modal .modal-title").textContent = item.title || "▶ 動画";
+    openModal("video-modal");
+    video.play().catch(() => {});
+  }
+
+  // 使い方の動画（動画1）を使い方の画面に入れる
+  function setupTutorialVideo() {
+    const item = VIDEOS.intro;
+    const video = $("#tutorial-video");
+    if (!item) {
+      video.classList.add("hidden");
+      $(".tutorial-text").open = true;
+      return;
+    }
+    video.src = item.src;
+    video.poster = item.poster || "";
   }
 
   function latestDraft() {
@@ -728,7 +790,8 @@
 
     const query = ($("#topic-search").value || "").trim().toLowerCase();
     const shown = TOPICS.filter((topic) => !query || `${topic.label} ${topic.en} ${topic.ja} ${topic.points.join(" ")}`.toLowerCase().includes(query));
-    $("#topic-list").innerHTML = shown.length ? shown.map((topic) => {
+    const showExample = EXAMPLE && (!query || "例題".includes(query) || `${EXAMPLE.topic.en} ${EXAMPLE.topic.ja}`.toLowerCase().includes(query));
+    $("#topic-list").innerHTML = (showExample ? exampleCardHtml() : "") + (shown.length ? shown.map((topic) => {
       const mine = records.filter((record) => record.topicId === topic.id);
       const doneCount = mine.filter((record) => record.status === "done").length;
       const topicDraft = mine.find((record) => record.status !== "done");
@@ -751,7 +814,9 @@
           <p class="topic-points">POINTS：${topic.points.map(escapeHtml).join(" / ")}</p>
           <div class="topic-actions">${actions}</div>
         </article>`;
-    }).join("") : `<p class="empty-panel">見つかりませんでした。</p>`;
+    }).join("") : `<p class="empty-panel">見つかりませんでした。</p>`);
+    const exampleVideo = $("[data-example-video]");
+    if (exampleVideo) exampleVideo.addEventListener("click", () => openVideo("example"));
 
     $$("[data-start]").forEach((button) => {
       button.addEventListener("click", () => {
@@ -1115,7 +1180,7 @@
       await new Promise((resolve) => window.setTimeout(resolve, 900));
       return path === "/api/review-ja" ? mockJaReview(body) : mockEnReview(body);
     }
-    if (!AI_URL) throw new Error("AIの設定がまだありません。田中先生に知らせてください。");
+    if (!AI_URL) throw new Error("AIの設定がまだありません。先生に知らせてください。");
     const token = await auth.currentUser.getIdToken();
     let response;
     try {
@@ -1138,6 +1203,7 @@
   }
 
   function mockJaReview(body) {
+    if (EXAMPLE && body.topic.id === EXAMPLE.topic.id) return JSON.parse(JSON.stringify(EXAMPLE.jaReview));
     return {
       sentences: body.reasons.flatMap((reason, r) => reason.ja.map((text, i) => ({
         reason: r + 1,
@@ -1153,6 +1219,7 @@
   }
 
   function mockEnReview(body) {
+    if (EXAMPLE && body.topic.id === EXAMPLE.topic.id) return JSON.parse(JSON.stringify(EXAMPLE.enReview));
     const useModel = MODEL && body.topic.id === MODEL.topicId && body.stance === MODEL.stance;
     const corrections = body.reasons.flatMap((reason, r) => reason.en.map((text, i) => {
       let corrected = text;
@@ -1167,9 +1234,9 @@
         text: MODEL.paragraphs[0],
         ja: MODEL.paragraphsJa[0],
         notes: [
-          "1つ目：Nowadays, ＋トピックの名詞＋has been a controversial issue in Japan. 名詞のかたまりを入れ替えればほかのトピックでも使える。",
-          "2つ目：Although some argue that we don't have to change 〜（don't have to＋動詞の原形）。3つ目をただ否定にした形にしないのがポイント。",
-          "3つ目：I strongly believe that high school education should be improved（助動詞＋受動態）for the following two reasons."
+          "1文目：Nowadays, ＋トピックの名詞＋has been a controversial issue in Japan. 名詞のかたまりを入れ替えればほかのトピックでも使える。",
+          "2文目：Although some argue that we don't have to change 〜（don't have to＋動詞の原形）。3文目をただ否定にした形にしないのがポイント。",
+          "3文目：I strongly believe that high school education should be improved（助動詞＋受動態）for the following two reasons."
         ]
       } : { text: "(Demo) Nowadays, ... has been a controversial issue in Japan. Although some argue that ..., I strongly believe that ... for the following two reasons.", ja: demoNote, notes: [demoNote] },
       paragraph4: useModel ? {
@@ -1179,7 +1246,7 @@
         notes: [
           "理由1「カリキュラムが生徒の力を伸ばすのに効果的でない」→ the necessity of changing curriculum（動名詞 changing を使った名詞のかたまり）",
           "理由2「グローバル社会で英語を話す力を伸ばす必要がある」→ adaptation to globalization（adapt を名詞 adaptation に語形変化）",
-          "結論：there is no doubt that we should improve 〜（能動態）。1段落目の3つ目（助動詞＋受動態）と形を変えている。"
+          "結論：there is no doubt that we should improve 〜（能動態）。1段落目の3文目（助動詞＋受動態）と形を変えている。"
         ]
       } : { text: "(Demo) In conclusion for the above-mentioned two reasons, ..., and ..., there is no doubt that ...", ja: demoNote, nouns: [], notes: [demoNote] },
       viewpoints: { content: "（デモ表示）", structure: "（デモ表示）", vocabulary: "（デモ表示）", grammar: "（デモ表示）" },
@@ -1235,7 +1302,7 @@
       </section>
 
       ${options && options.ownerName ? "" : `<section class="work-panel line-panel">
-        <h2>わからない所は田中先生にLINEで質問</h2>
+        <h2>わからない所は先生にLINEで質問</h2>
         <p class="hint">なぜこの形になるのか分からない所（関係代名詞・受動態など）は、下をそのままコピーしてLINEで送ろう。最後の「質問」に聞きたいことを書いてね。</p>
         <pre class="copy-block" id="copy-block">${escapeHtml(buildCopyText(record, options && options.ownerName))}</pre>
         <div class="button-row">
@@ -2118,7 +2185,7 @@
       <h3>単語アプリと共通のもの</h3>
       <p>ID・パスワード・名前・教師かどうか・アーカイブ（削除）は、単語アプリなどハピクルの全アプリで共通です。ここで「削除」や「教師に昇格」をすると、単語アプリにも同じように反映されます。</p>
       <h3>AIの添削について</h3>
-      <p>AIの添削は1人1日30回（15題ぶん）までです。AIの説明で分からない所は、生徒が全文をコピーして田中先生にLINEで質問する流れにしています。</p>
+      <p>AIの添削は1人1日30回（15題ぶん）までです。AIの説明で分からない所は、生徒が全文をコピーして先生にLINEで質問する流れにしています。</p>
     </div>`;
   }
 
@@ -2190,7 +2257,7 @@
       ["理由を日本語で6文", "賛成か反対かを決めて、理由を2つ。理由ごとにPOINTを1つ選び、3文ずつ書きます（理由→具体例→まとめ）。"],
       ["AIが日本語を整える", "中学で習う文法で英語にできる日本語に直します。どの文法で書くかを見越した理由もコメントで返ってきます。"],
       ["英語にする", "直った日本語を見ながら、6文を英語にして送信します。"],
-      ["全文が出る", "1段落目と4段落目はアプリが型どおりに作ります。全文は「学習データ」のノートにたまるので、覚えて授業へ。分からない所はコピーして田中先生にLINEで質問しよう。"]
+      ["全文が出る", "1段落目と4段落目はアプリが型どおりに作ります。全文は「学習データ」のノートにたまるので、覚えて授業へ。分からない所はコピーして先生にLINEで質問しよう。"]
     ];
     $("#tutorial-body").innerHTML = steps.map(([title, text], i) => `
       <div class="tutorial-step"><span class="tutorial-no">${i + 1}</span><div><h3>${title}</h3><p>${text}</p></div></div>`).join("");
@@ -2248,6 +2315,8 @@
   function closeModal(id) {
     const element = $(`#${id}`);
     if (element) element.classList.add("hidden");
+    if (id === "video-modal") $("#video-player").pause();
+    if (id === "tutorial-modal") $("#tutorial-video").pause();
   }
 
   function showError(id, message) {

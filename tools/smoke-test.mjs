@@ -83,6 +83,8 @@ try {
   await evaluate(`document.querySelector('#btn-demo-login').click(); true`);
   await waitFor(`document.querySelector('#screen-home.active') && document.querySelectorAll('.topic-card').length > 0`, "トピック一覧");
   check(await evaluate(`!document.querySelector('#tutorial-modal').classList.contains('hidden')`), "初回は使い方が開く");
+  await waitFor(`(() => { const v = document.querySelector('#tutorial-video'); return v.readyState >= 1 && v.duration > 30; })()`, "使い方の動画の読み込み", 20000);
+  check(await evaluate(`document.querySelector('#tutorial-video').src.endsWith('videos/tutorial_app.mp4')`), `使い方の画面に動画1が入っている（長さ ${await evaluate(`Math.round(document.querySelector('#tutorial-video').duration)`)}秒）`);
   await shot("02_tutorial");
   await evaluate(`document.querySelector('#btn-finish-tutorial').click(); true`);
   await evaluate(`window.confirm = () => true; window.alert = () => {}; true`);
@@ -97,10 +99,15 @@ try {
   check(true, "「書く」リンクを押すと書く画面に移る");
   check(await evaluate(`!document.querySelector('#tab-admin').classList.contains('hidden')`), "講師（デモ）には管理タブが出る");
 
-  check(await evaluate(`document.querySelectorAll('.topic-card').length === window.WRITING_TOPICS.length && window.WRITING_TOPICS.length >= 30`), "過去問トピックが全件並ぶ");
+  check(await evaluate(`document.querySelectorAll('.topic-card:not(.example-card)').length === window.WRITING_TOPICS.length && window.WRITING_TOPICS.length >= 30 && document.querySelector('.topic-card').classList.contains('example-card')`), "いちばん上に例題、その下に過去問トピックが全件並ぶ");
   await evaluate(`(() => { const box = document.querySelector('#topic-search'); box.value = 'vegetarian'; box.dispatchEvent(new Event('input', { bubbles: true })); return true; })()`);
   check(await evaluate(`document.querySelectorAll('.topic-card').length === 1`), "トピックを検索で絞れる");
   await evaluate(`(() => { const box = document.querySelector('#topic-search'); box.value = ''; box.dispatchEvent(new Event('input', { bubbles: true })); return true; })()`);
+  await evaluate(`document.querySelector('[data-example-video]').click(); true`);
+  await waitFor(`(() => { const v = document.querySelector('#video-player'); return !document.querySelector('#video-modal').classList.contains('hidden') && v.readyState >= 1 && v.duration > 30; })()`, "例題の動画", 20000);
+  check(await evaluate(`document.querySelector('#video-player').src.endsWith('videos/tutorial_example.mp4')`), `例題の「▶ 解き方の動画」で動画2が開く（長さ ${await evaluate(`Math.round(document.querySelector('#video-player').duration)`)}秒）`);
+  await evaluate(`document.querySelector('[data-close-modal="video-modal"]').click(); true`);
+  check(await evaluate(`document.querySelector('#video-player').paused`), "動画を閉じると止まる");
   await evaluate(`document.querySelector('[data-mode=summary]').click(); true`);
   check(await evaluate(`!document.querySelector('#mode-summary').classList.contains('hidden')`), "要約タブに切り替わる（準備中）");
   await evaluate(`document.querySelector('[data-mode=essay]').click(); true`);

@@ -1062,3 +1062,100 @@ window.WRITING_SCORING = [
   { key: "vocabulary", label: "語彙", text: "課題に相応しい語彙を正しく使えているか" },
   { key: "grammar", label: "文法", text: "文構造のバリエーションやそれらを正しく使えているか" }
 ];
+
+// 例題（書くのいちばん上）。トピックは2019年度第2回と同じ。デモ（AIなし）のときは、この見本の添削結果を出す
+// 見本の中身＝動画/02_絵コンテ_例題の解き方（1段落目と4段落目は田中先生の回答例そのまま）
+window.WRITING_EXAMPLE = {
+  topic: {
+    id: "example",
+    label: "例題",
+    en: "Agree or disagree: High school education in Japan needs to be improved",
+    ja: "日本の高校教育は改善されるべきか",
+    points: ["Curriculum", "Globalization", "Pressure on students", "Quality of teaching"],
+    pointsJa: ["カリキュラム", "グローバル化", "生徒への圧力", "指導の質"]
+  },
+  input: {
+    stance: "agree",
+    reasons: [
+      {
+        point: "Curriculum",
+        ja: [
+          "日本の高校のカリキュラムは、生徒の能力開発において効率性を欠いている。",
+          "例えば、北海道大学のレポートによると、教師とのインタラクションこそがスキル向上の最適解らしい。",
+          "なのに、今の日本の教育は講義と暗記に偏重しすぎだ。"
+        ],
+        en: [
+          "Firstly, curriculum of high school is not effective for develop students ability.",
+          "For example, report by Hokkaido University show that interact with teachers is best way to hone student skills.",
+          "However, today's Japanese education is too lecture and memorize."
+        ]
+      },
+      {
+        point: "Globalization",
+        ja: [
+          "グローバル化が進む社会では、英語を話す力を伸ばすことが必要不可欠だ。",
+          "私の経験上、ほとんどの生徒は授業で英文を読むだけで、スピーキングの練習はしていない。",
+          "このままだと、いつまでたっても英語がペラペラにならない。"
+        ],
+        en: [
+          "Additionally, we need develop ability of speaking English in globalizing society.",
+          "In my experience, for instance, most student only read English sentences and don't practice speak English in class.",
+          "In this system, students can not speak English fluently forever."
+        ]
+      }
+    ]
+  },
+  jaReview: {
+    sentences: [
+      { reason: 1, index: 1, revised: "日本の高校のカリキュラムは、生徒の力を伸ばすのに効果的ではない。", comment: "「能力開発において効率性を欠いている」は、そのままだと英語にしにくい言い方です。「〜を伸ばすのに効果的ではない」にすると、be動詞の否定と「〜すること」の形で書けます。", grammar: ["be動詞の否定", "動名詞"], phraseNo: 39 },
+      { reason: 1, index: 2, revised: "例えば、北海道大学が出したレポートは、先生と交流することが、生徒の技能を磨く一番よい方法だと示している。", comment: "主語を「レポートは」にして「〜と示している」と言い切ると、A report shows that 〜 の形で書けます。「先生と交流すること」は動名詞（〜ing）で主語にできます。", grammar: ["動名詞", "接続詞 that", "最上級"], phraseNo: 3 },
+      { reason: 1, index: 3, revised: "しかし、今の日本の教育のしくみは、講義と暗記にかたよりすぎている。", comment: "「なのに」は、書き言葉の「しかし」（However）にしました。「〜すぎる」は too＋形容詞で書けます。", grammar: ["too＋形容詞"], phraseNo: 69 },
+      { reason: 2, index: 1, revised: "グローバル化が進む社会では、私たちは英語を話す力を伸ばす必要がある。", comment: "主語を「私たちは」にして「〜する必要がある」にすると、we need to 〜（不定詞）で書けます。", grammar: ["不定詞"], phraseNo: 0 },
+      { reason: 2, index: 2, revised: "例えば、私の経験では、ほとんどの生徒は授業で英文を読むだけで、英語を話す練習をしていない。", comment: "具体例の文なので「例えば」を足しました。「英語を話す練習」は practice＋動名詞（speaking）で書けます。", grammar: ["動名詞"], phraseNo: 0 },
+      { reason: 2, index: 3, revised: "このしくみでは、生徒はいつまでたっても英語を流ちょうに話せるようにならない。", comment: "主語の「生徒は」を足しました。「ペラペラ」は「流ちょうに話す」（speak fluently）にすると英語にしやすくなります。", grammar: ["助動詞"], phraseNo: 0 }
+    ],
+    overall: "理由1はカリキュラム、理由2はグローバル化で、POINTと合っています。2つの理由の中身も重なっていません。"
+  },
+  enReview: {
+    corrections: [
+      { reason: 1, index: 1, corrected: "Firstly, the curriculum of high school education is not effective in developing students' abilities.", changed: true, comment: "「〜するのに効果的」は effective in＋動名詞（developing）です。for のあとに動詞の原形は置けません。" },
+      { reason: 1, index: 2, corrected: "A report issued by Hokkaido University, for example, shows that interacting with teachers is the best way to hone students' skills.", changed: true, comment: "report は1つなので shows。「交流すること」は動名詞 interacting で主語にします。最上級の best には the をつけます。" },
+      { reason: 1, index: 3, corrected: "However, today's Japanese education system is too lecture and rote memorization-oriented.", changed: true, comment: "おすすめフレーズ69の lecture and rote memorization-oriented が使えます。memorize（動詞）のままでは「かたよった」の意味になりません。" },
+      { reason: 2, index: 1, corrected: "Additionally, we need to develop the ability to speak English in this globalizing society.", changed: true, comment: "need のあとは to＋動詞の原形です。「英語を話す力」は the ability to speak English（不定詞）にします。" },
+      { reason: 2, index: 2, corrected: "In my experience, for instance, most students just read English sentences but do not practice speaking English in their classes.", changed: true, comment: "most のあとは複数形 students。practice のあとは動名詞（speaking）です。「読むだけで〜しない」は but でつなぎます。" },
+      { reason: 2, index: 3, corrected: "In this system, students will never be able to speak English fluently.", changed: true, comment: "「いつまでたっても〜できるようにならない」は will never be able to 〜 で表します。can not と forever を一緒に使うと、意味がぶれます。" }
+    ],
+    paragraph1: {
+      text: "Nowadays, high school education has been a controversial issue in Japan. Although some argue that we don't have to change the system of high school education, I strongly believe that high school education should be improved for the following two reasons.",
+      ja: "近年高校教育が日本で議論を呼ぶ問題となっている。高校の教育システムを変える必要はないと意見する者もいるが、私は以下の二つの理由から高校教育は改善すべきであると強く考える。",
+      notes: [
+        "1文目：Nowadays, ＋トピックの名詞＋has been a controversial issue in Japan. 名詞のかたまりを入れ替えれば、ほかのトピックでも使えます。",
+        "2文目：Although some argue that we don't have to change 〜（don't have to＋動詞の原形）。3文目をただ否定にした形にしないのがポイントです。",
+        "3文目：I strongly believe that high school education should be improved（助動詞＋受動態）for the following two reasons."
+      ]
+    },
+    paragraph4: {
+      text: "In conclusion for the above-mentioned two reasons, the necessity of changing curriculum, and adaptation to globalization, there is no doubt that we should improve today's high school education in Japan.",
+      ja: "以上に述べたカリキュラムを変える必要性、グローバル化への適応などの二つの理由から、今日の日本の高校教育を改善すべきであることは間違いない。",
+      nouns: ["the necessity of changing curriculum", "adaptation to globalization"],
+      notes: [
+        "理由1「カリキュラムが生徒の力を伸ばすのに効果的でない」→ the necessity of changing curriculum（動名詞 changing を使った名詞のかたまり）",
+        "理由2「英語を話す力を伸ばす必要がある」→ adaptation to globalization（adapt を名詞 adaptation に語形変化）",
+        "結論：there is no doubt that we should improve 〜（能動態）。1段落目の3文目（助動詞＋受動態）と形を変えています。"
+      ]
+    },
+    viewpoints: {
+      content: "立場と、それに合った理由が2つ書けています。",
+      structure: "Firstly／Additionally と、例を示す for example／for instance が使えていて、流れが分かりやすいです。",
+      vocabulary: "hone skills など、おすすめフレーズを使えています。memorize のように品詞をまちがえた所に気をつけましょう。",
+      grammar: "to＋動詞と〜ing の使い分け（need to develop／practice speaking）を見直しましょう。"
+    },
+    overall: "理由の中身はよく書けています。直した所は、ほとんどが「to＋動詞」と「〜ing」の使い分けです。全文は163語で、目安の120〜150語より少し多めです。"
+  }
+};
+
+// チュートリアル動画（縦1080×1920・音声：VOICEVOX:冥鳴ひまり）。intro＝使い方の画面／example＝例題の「▶ 解き方の動画」
+window.WRITING_VIDEOS = {
+  intro: { src: "videos/tutorial_app.mp4", poster: "videos/tutorial_app.jpg" },
+  example: { src: "videos/tutorial_example.mp4", poster: "videos/tutorial_example.jpg", title: "▶ 例題の解き方" }
+};

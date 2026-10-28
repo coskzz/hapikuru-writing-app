@@ -87,22 +87,22 @@ ${MODEL_ANSWER}
 - changed：直したら true、直さなかったら false。
 - comment：何をなぜ直したかを日本語で1〜2文。文法の名前を添える（例：「主語が3人称単数なので is にしました」「『〜すること』は動名詞 developing にします」）。直していない文は、よかった点を短く書く。
 
-## (B) paragraph1 の型（手本と同じ3つの部分で書く）
-- 1つ目：Nowadays, [トピックの中心になる名詞のかたまり] has been a controversial issue [in Japan / around the world など、トピックに合う場所].
+## (B) paragraph1 の型（手本と同じ3つの部分で書く。田中先生の呼び方に合わせて、3つの部分を「1文目・2文目・3文目」と呼ぶ。2文目＝Although の節、3文目＝I strongly believe の節）
+- 1文目：Nowadays, [トピックの中心になる名詞のかたまり] has been a controversial issue [in Japan / around the world など、トピックに合う場所].
   "has been a controversial issue" は固定。名詞のかたまりはトピックから作る（例：high school education / international cooperation to increase global food production）。
-- 2つ目：Although some argue that [生徒と反対の意見],
-- 3つ目：I strongly believe that [生徒の意見] for the following two reasons.
+- 2文目：Although some argue that [生徒と反対の意見],
+- 3文目：I strongly believe that [生徒の意見] for the following two reasons.
   "I strongly believe that" と "for the following two reasons" は固定。
-- 生徒が「反対」の立場なら、3つ目は反対の意見、2つ目は賛成側の意見になる。
-- 最重要：2つ目と3つ目は文法の形を変える。2つ目を3つ目のただの否定にしてはいけない（悪い例：3つ目が should be improved のとき、2つ目を should not be improved にする）。手本では2つ目が "we don't have to change the system of high school education"（don't have to＋動詞の原形、主語は we の能動態）、3つ目が "high school education should be improved"（助動詞＋受動態）。主語・態・助動詞・動詞を変えて、同じ話題を別の形で言う。
-- notes：1つ目・2つ目・3つ目それぞれに、使った文法の形と「どこを入れ替えればほかのトピックでも使えるか」を日本語で1文ずつ（3個）。2つ目と3つ目のnoteでは、形をどう変えたかを必ず書く。
+- 生徒が「反対」の立場なら、3文目は反対の意見、2文目は賛成側の意見になる。
+- 最重要：2文目と3文目は文法の形を変える。2文目を3文目のただの否定にしてはいけない（悪い例：3文目が should be improved のとき、2文目を should not be improved にする）。手本では2文目が "we don't have to change the system of high school education"（don't have to＋動詞の原形、主語は we の能動態）、3文目が "high school education should be improved"（助動詞＋受動態）。主語・態・助動詞・動詞を変えて、同じ話題を別の形で言う。
+- notes：1文目・2文目・3文目それぞれに、使った文法の形と「どこを入れ替えればほかのトピックでも使えるか」を日本語で1文ずつ（3個）。2文目と3文目のnoteでは、形をどう変えたかを必ず書く。
 
 ## (C) paragraph4 の型
 - In conclusion for the above-mentioned two reasons, [理由1の名詞のかたまり], and [理由2の名詞のかたまり], there is no doubt that [生徒の意見].
   この枠（In conclusion for the above-mentioned two reasons, … , and … , there is no doubt that …）は田中先生の型なので、句読点も含めてこのまま使う。
 - 理由の名詞のかたまり（nouns）：理由1・理由2の中身を、名詞・動名詞を使ったかたまりに言い換える（語形変化）。例：「カリキュラムを変える必要がある」→ the necessity of changing curriculum／「グローバル化に適応する」→ adaptation to globalization。動詞を名詞にする（adapt → adaptation）、動名詞を使う（changing）、the necessity of / the lack of / the increase in などを使う。採点者が理由の段落を読み取りにくかった場合でも、ここで何が言いたかったかが伝わるようにする。
-- there is no doubt that のあとの文は、paragraph1 の3つ目と文法の形を変える（手本：3つ目が助動詞＋受動態 "should be improved" → 結論は能動態 "we should improve"）。
-- notes：(1) 理由1をどう名詞にしたか (2) 理由2をどう名詞にしたか (3) 結論の文の形を1段落目の3つ目からどう変えたか、を日本語で1文ずつ（3個）。
+- there is no doubt that のあとの文は、paragraph1 の3文目と文法の形を変える（手本：3文目が助動詞＋受動態 "should be improved" → 結論は能動態 "we should improve"）。
+- notes：(1) 理由1をどう名詞にしたか (2) 理由2をどう名詞にしたか (3) 結論の文の形を1段落目の3文目からどう変えたか、を日本語で1文ずつ（3個）。
 
 ## ja（日本語訳）
 paragraph1 と paragraph4 に、自然な日本語訳をつける（手本の日本語訳のような文体）。

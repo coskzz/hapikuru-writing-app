@@ -41,7 +41,7 @@ export default {
     } catch (error) {
       return json({ error: "unauthorized", message: "ログインし直してください。" }, 401, cors);
     }
-    if (!env.ANTHROPIC_API_KEY) return json({ error: "ai_key_missing", message: "AI添削の準備中です（AIのキーがまだ設定されていません）。田中先生に知らせてください。" }, 503, cors);
+    if (!env.ANTHROPIC_API_KEY) return json({ error: "ai_key_missing", message: "AI添削の準備中です（AIのキーがまだ設定されていません）。先生に知らせてください。" }, 503, cors);
 
     let body;
     try {

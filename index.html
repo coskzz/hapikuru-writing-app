@@ -411,7 +411,11 @@
         <h3 class="modal-title">❓ 使い方</h3>
         <button class="modal-close-btn" data-close-modal="tutorial-modal">✕</button>
       </div>
-      <div id="tutorial-body" class="tutorial-body"></div>
+      <video id="tutorial-video" class="video-player" controls playsinline preload="metadata"></video>
+      <details class="tutorial-text">
+        <summary>文字で読む</summary>
+        <div id="tutorial-body" class="tutorial-body"></div>
+      </details>
       <button id="btn-finish-tutorial" class="btn btn-primary btn-wide">はじめる</button>
     </div>
   </div>
@@ -426,6 +430,17 @@
       <p class="hint">理由の文を書くときに使ってみよう。これ以外の表現を使ってもOK。</p>
       <input id="phrase-search" class="admin-search" type="search" placeholder="英語・日本語で検索">
       <ol id="phrase-list" class="phrase-list"></ol>
+    </div>
+  </div>
+
+  <!-- 解き方の動画 -->
+  <div id="video-modal" class="modal-overlay hidden">
+    <div class="modal-box video-box">
+      <div class="modal-header">
+        <h3 class="modal-title">▶ 動画</h3>
+        <button class="modal-close-btn" data-close-modal="video-modal">✕</button>
+      </div>
+      <video id="video-player" class="video-player" controls playsinline preload="metadata"></video>
     </div>
   </div>
 
