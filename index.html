@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ハピクル 準1級ライティング</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="screen-loading" class="screen active">
+    <div class="loading-shell">
+      <div class="brand-mark">ハピクル英語塾</div>
+      <div class="loading-spinner" aria-label="読み込み中"></div>
+    </div>
+  </div>
+
+  <!-- ログイン -->
+  <div id="screen-welcome" class="screen">
+    <main class="auth-layout">
+      <section class="auth-hero">
+        <p class="brand-kicker">Eiken Pre-1 Writing</p>
+        <h1>準1級<br>ライティング</h1>
+        <p>理由を日本語で書く → 英語にする → 型どおりの全文が出る。</p>
+      </section>
+
+      <section class="auth-panel">
+        <div id="form-login" class="auth-form">
+          <h2>ログイン</h2>
+          <p class="form-note">単語アプリと同じIDとパスワードで入れます。</p>
+          <label>
+            <span>ID</span>
+            <input id="login-id" type="text" autocomplete="username" autocapitalize="off" placeholder="例: tanaka">
+          </label>
+          <label>
+            <span>パスワード</span>
+            <input id="login-password" type="password" autocomplete="current-password" placeholder="6文字以上">
+          </label>
+          <p id="login-error" class="form-error hidden"></p>
+          <button id="btn-login" class="btn btn-primary">ログイン</button>
+          <button id="btn-demo-login" class="btn btn-secondary">デモで確認（AIなし）</button>
+          <p class="form-switch">初めて使う場合は <button id="show-signup" type="button">新規登録</button></p>
+        </div>
+
+        <div id="form-signup" class="auth-form hidden">
+          <h2>新規登録</h2>
+          <label>
+            <span>名前</span>
+            <input id="signup-name" type="text" autocomplete="name" placeholder="例: 田中 太郎">
+          </label>
+          <label>
+            <span>ID</span>
+            <input id="signup-id" type="text" autocomplete="username" autocapitalize="off" placeholder="半角英数字">
+          </label>
+          <label>
+            <span>パスワード</span>
+            <input id="signup-password" type="password" autocomplete="new-password" placeholder="6文字以上">
+          </label>
+          <p id="signup-error" class="form-error hidden"></p>
+          <button id="btn-signup" class="btn btn-primary">登録する</button>
+          <p class="form-switch">アカウントがある場合は <button id="show-login" type="button">ログイン</button></p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- ホーム：英作文／要約のタブ -->
+  <div id="screen-home" class="screen app-screen">
+    <header class="app-header">
+      <div>
+        <p class="brand-kicker">Hapikuru English</p>
+        <h1>準1級ライティング</h1>
+      </div>
+      <div class="header-actions">
+        <span id="home-user-name" class="user-chip"></span>
+        <span id="demo-badge" class="demo-badge hidden">デモ</span>
+      </div>
+    </header>
+
+    <div class="mode-tabs" role="tablist">
+      <button class="mode-tab active" data-mode="essay" role="tab">英作文（大問5）</button>
+      <button class="mode-tab" data-mode="summary" role="tab">要約（大問4）</button>
+    </div>
+
+    <main id="mode-essay">
+      <section id="resume-panel" class="today-panel hidden">
+        <div>
+          <p class="panel-label">書きかけ</p>
+          <h2 id="resume-title"></h2>
+          <p id="resume-copy"></p>
+        </div>
+        <button id="btn-resume" class="btn btn-primary">続きから</button>
+      </section>
+
+      <section class="flow-strip">
+        <div><b>1</b>理由を日本語で6文</div>
+        <div><b>2</b>AIが日本語を整える</div>
+        <div><b>3</b>英語にする</div>
+        <div><b>4</b>全文が出る</div>
+      </section>
+
+      <div class="section-heading">
+        <h2>トピックを選ぶ</h2>
+        <div class="heading-actions">
+          <button id="btn-open-tutorial" class="text-btn">使い方</button>
+          <button class="text-btn" data-open-phrases>おすすめフレーズ77</button>
+        </div>
+      </div>
+      <input id="topic-search" class="topic-search" type="search" placeholder="トピックを探す（英語・日本語・年度）">
+      <div id="topic-list" class="topic-list"></div>
+    </main>
+
+    <main id="mode-summary" class="hidden">
+      <section class="empty-panel">
+        <h2>要約（大問4）は準備中です</h2>
+        <p>英作文とは別にここで練習できるようにします。できたら、このタブに追加します。</p>
+      </section>
+    </main>
+  </div>
+
+  <!-- 書く画面（ステップ1〜4） -->
+  <div id="screen-write" class="screen app-screen">
+    <header class="sub-header">
+      <button class="back-btn" id="btn-write-back">戻る</button>
+      <div>
+        <p id="write-label" class="brand-kicker"></p>
+        <h1 class="topic-title" id="write-topic-en"></h1>
+        <p class="topic-ja" id="write-topic-ja"></p>
+      </div>
+    </header>
+    <ol class="stepper" id="stepper">
+      <li data-step="ja">日本語で書く</li>
+      <li data-step="jaReview">日本語の添削</li>
+      <li data-step="en">英語にする</li>
+      <li data-step="result">全文</li>
+    </ol>
+    <main id="write-body"></main>
+  </div>
+
+  <!-- ノート（自分の答案の一覧） -->
+  <div id="screen-notes" class="screen app-screen">
+    <header class="app-header">
+      <div>
+        <p class="brand-kicker">My Notes</p>
+        <h1>ノート</h1>
+      </div>
+    </header>
+    <section class="stats-row" id="notes-stats"></section>
+    <p class="hint">書いた全文はここにたまります。次の授業までに、1段落目と4段落目の型を覚えておこう。</p>
+    <div id="notes-list" class="record-list"></div>
+  </div>
+
+  <!-- 答案を見る（ノート・管理画面から） -->
+  <div id="screen-record" class="screen app-screen">
+    <header class="sub-header">
+      <button class="back-btn" id="btn-record-back">戻る</button>
+      <div>
+        <p id="record-label" class="brand-kicker"></p>
+        <h1 class="topic-title" id="record-topic-en"></h1>
+        <p class="topic-ja" id="record-topic-ja"></p>
+      </div>
+    </header>
+    <main id="record-body"></main>
+  </div>
+
+  <!-- プロフィール -->
+  <div id="screen-profile" class="screen app-screen">
+    <header class="app-header">
+      <div>
+        <p class="brand-kicker">Profile</p>
+        <h1>プロフィール</h1>
+      </div>
+    </header>
+    <section class="profile-card" id="profile-body"></section>
+    <button id="btn-logout" class="btn btn-secondary btn-wide">ログアウト</button>
+  </div>
+
+  <!-- 管理画面（講師） -->
+  <div id="screen-admin" class="screen app-screen">
+    <header class="app-header">
+      <div>
+        <p class="brand-kicker">Teacher</p>
+        <h1>管理画面</h1>
+      </div>
+      <button id="btn-refresh-admin" class="btn btn-secondary btn-small">更新</button>
+    </header>
+    <div class="admin-toolbar">
+      <input id="admin-search" type="search" placeholder="名前・IDで検索">
+      <label class="check-label"><input id="admin-show-all" type="checkbox"> 取り組みゼロの生徒も出す</label>
+    </div>
+    <div id="admin-student-list" class="admin-student-list"></div>
+  </div>
+
+  <div id="screen-admin-student" class="screen app-screen">
+    <header class="sub-header">
+      <button class="back-btn" data-back="screen-admin">戻る</button>
+      <div>
+        <p class="brand-kicker" id="admin-student-id"></p>
+        <h1 id="admin-student-name"></h1>
+      </div>
+    </header>
+    <section class="stats-row" id="admin-student-stats"></section>
+    <div id="admin-student-records" class="record-list"></div>
+  </div>
+
+  <!-- 使い方 -->
+  <div id="tutorial-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="tutorial-title">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2 id="tutorial-title">使い方</h2>
+        <button class="icon-btn" data-close-modal="tutorial-modal" aria-label="閉じる">閉じる</button>
+      </div>
+      <div id="tutorial-body" class="tutorial-body"></div>
+      <button id="btn-finish-tutorial" class="btn btn-primary btn-wide">はじめる</button>
+    </div>
+  </div>
+
+  <!-- おすすめフレーズ77 -->
+  <div id="phrases-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="phrases-title">
+    <div class="modal-card modal-wide">
+      <div class="modal-header">
+        <h2 id="phrases-title">おすすめフレーズ77</h2>
+        <button class="icon-btn" data-close-modal="phrases-modal" aria-label="閉じる">閉じる</button>
+      </div>
+      <p class="hint">理由の文を書くときに使ってみよう。これ以外の表現を使ってもOK。</p>
+      <input id="phrase-search" type="search" placeholder="英語・日本語で検索">
+      <ol id="phrase-list" class="phrase-list"></ol>
+    </div>
+  </div>
+
+  <!-- AI添削中 -->
+  <div id="busy-overlay" class="busy-overlay hidden" role="status" aria-live="polite">
+    <div class="busy-card">
+      <div class="loading-spinner"></div>
+      <p id="busy-text">AIが添削しています</p>
+      <p class="hint">30秒〜1分ほどかかります。画面を閉じずに待ってね。</p>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden" role="status"></div>
+
+  <nav id="tab-bar" class="tab-bar hidden" aria-label="メインメニュー">
+    <button class="tab-btn active" data-tab-screen="screen-home">書く</button>
+    <button class="tab-btn" data-tab-screen="screen-notes">ノート</button>
+    <button class="tab-btn" data-tab-screen="screen-profile">プロフィール</button>
+    <button id="tab-admin" class="tab-btn hidden" data-tab-screen="screen-admin">管理</button>
+  </nav>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="ai-config.js"></script>
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

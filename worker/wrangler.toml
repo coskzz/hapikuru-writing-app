@@ -1,0 +1,22 @@
+# ハピクル 英検準1級ライティング：AI添削の中継サーバー
+# 配置：cd ~/hapikuru-writing-app/worker && npx wrangler deploy
+# APIキー（秘密）：npx wrangler secret put ANTHROPIC_API_KEY   ← ここには書かない
+name = "hapikuru-writing-ai"
+main = "src/index.js"
+compatibility_date = "2026-10-01"
+compatibility_flags = ["nodejs_compat"]
+account_id = "d2afd6c90e2ae2cc5fb60e6979299cd8"
+workers_dev = true
+
+[vars]
+MODEL = "claude-opus-5-5"
+EFFORT = "medium"
+FIREBASE_PROJECT_ID = "hapikuru-passtan-app-da588"
+ALLOWED_ORIGINS = "https://coskzz.github.io,http://127.0.0.1:8765,http://localhost:8765"
+DAILY_LIMIT_PER_USER = "30"
+DAILY_LIMIT_TOTAL = "600"
+
+# 1日の回数制限の記録（1人30回・全体600回。2回で1題）
+[[kv_namespaces]]
+binding = "USAGE"
+id = "bb97698f55114b86874deeb1500d8c5e"

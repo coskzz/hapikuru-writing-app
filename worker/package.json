@@ -1,0 +1,13 @@
+{
+  "name": "hapikuru-writing-ai",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev",
+    "try": "node ../tools/try-prompts.mjs"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.3.0"
+  }
+}
