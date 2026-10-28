@@ -18,7 +18,9 @@
 
 - `submitJa` → `/api/review-ja` → `normalizeJaReview`
 - `submitEn` → `/api/review-en` → `normalizeEnReview` → `buildEssay`（4段落を組み立て、`countWords` で語数）
-- `renderResult`：全文・LINE用コピー・型のポイント・添削・4観点。書く画面／ノート／管理画面で共通
+- `renderResult`：全文・LINE用コピー・型のポイント・添削・4観点。書く画面／学習データのノート／管理画面で共通
+- 学習データ・マイページ・管理画面は単語アプリ（`~/hapikuru-english-app`）の構造とクラス名を写している（`openStats`／`openMyPage`／`switchAdminTab`・`openUserDetail`）。単語アプリと共通の項目（名前・ID・パスワード・role・archived）は users/{uid} の書類にあり、ここで変えると単語アプリにも反映される
+- 1日ごとの回数・履歴・ポイントはモジュールの書類（`users/{uid}/modules/writing` の `dailyLog`・`historyLog`・`points`）。`logActivity("ja"|"done")` で増える
 - `persistRecord`：記録の保存と、モジュールの題数の更新
 - デモモード（`localMode`）は `mockJaReview` / `mockEnReview` で仮の結果を返す
 

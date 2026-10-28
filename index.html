@@ -64,7 +64,7 @@
     </main>
   </div>
 
-  <!-- ホーム：英作文／要約のタブ -->
+  <!-- 書く：英作文／要約のタブ -->
   <div id="screen-home" class="screen app-screen">
     <header class="app-header">
       <div>
@@ -102,7 +102,7 @@
       <div class="section-heading">
         <h2>トピックを選ぶ</h2>
         <div class="heading-actions">
-          <button id="btn-open-tutorial" class="text-btn">使い方</button>
+          <button class="text-btn" data-open-tutorial>使い方</button>
           <button class="text-btn" data-open-phrases>おすすめフレーズ77</button>
         </div>
       </div>
@@ -137,17 +137,69 @@
     <main id="write-body"></main>
   </div>
 
-  <!-- ノート（自分の答案の一覧） -->
-  <div id="screen-notes" class="screen app-screen">
-    <header class="app-header">
-      <div>
-        <p class="brand-kicker">My Notes</p>
-        <h1>ノート</h1>
+  <!-- 学習データ（単語アプリの「学習データ」と同じ並び＋ノート） -->
+  <div id="screen-stats" class="screen app-screen">
+    <div class="stats-header">
+      <div class="logo">📊 学習データ</div>
+      <span class="user-name" id="stats-username"></span>
+    </div>
+
+    <div class="streak-card">
+      <div class="streak-top">
+        <div>
+          <div class="streak-label">🔥 連続学習日数</div>
+          <div class="streak-best-row">最高記録: <span id="streak-best">0</span>日</div>
+        </div>
+        <div class="streak-num-wrap">
+          <span class="streak-num" id="streak-num">0</span>
+          <span class="streak-unit">日</span>
+        </div>
       </div>
-    </header>
-    <section class="stats-row" id="notes-stats"></section>
-    <p class="hint">書いた全文はここにたまります。次の授業までに、1段落目と4段落目の型を覚えておこう。</p>
-    <div id="notes-list" class="record-list"></div>
+      <div class="streak-week" id="streak-week"></div>
+    </div>
+
+    <div class="points-card">
+      <div class="points-inner">
+        <span class="points-label">⭐ 累計ポイント</span>
+        <span class="points-num" id="stats-points">0</span>
+        <span class="points-unit">pt</span>
+      </div>
+    </div>
+
+    <div class="mypage-book-tabs" id="stats-mode-tabs">
+      <button class="mypage-book-tab active" data-stats-mode="essay">✍️ 英作文</button>
+      <button class="mypage-book-tab" data-stats-mode="summary">📄 要約（準備中）</button>
+    </div>
+
+    <div id="stats-essay">
+      <div class="mypage-section-title">📅 今日</div>
+      <div class="effort-grid effort-grid-3" id="stats-today"></div>
+
+      <div class="mypage-section-title">📚 学習の記録</div>
+      <div class="effort-grid" id="stats-effort-grid"></div>
+
+      <div class="mypage-section-title">📒 ノート（書いた英作文の振り返り）</div>
+      <p class="hint">添削が終わった全文はここにたまります。次の授業までに、1段落目と4段落目の型を覚えておこう。</p>
+      <div id="notes-list" class="record-list"></div>
+
+      <div class="mypage-section-title">📝 履歴</div>
+      <div id="stats-history" class="stats-history"></div>
+
+      <div class="mypage-section-title">📆 カレンダー</div>
+      <div id="stats-calendar"></div>
+
+      <div class="mypage-section-title">📈 書いた題数の推移</div>
+      <div id="stats-chart"></div>
+    </div>
+
+    <div id="stats-summary" class="hidden">
+      <p class="empty-panel">要約（大問4）は準備中です。できたら、ここに要約の記録も出ます。</p>
+    </div>
+
+    <div class="mypage-feedback-area">
+      <p class="feedback-desc">アプリの使い方は「使い方」で確認できます。</p>
+      <button class="btn btn-secondary btn-small" data-open-tutorial>❓ 使い方を見る</button>
+    </div>
   </div>
 
   <!-- 答案を見る（ノート・管理画面から） -->
@@ -163,52 +215,201 @@
     <main id="record-body"></main>
   </div>
 
-  <!-- プロフィール -->
-  <div id="screen-profile" class="screen app-screen">
-    <header class="app-header">
-      <div>
-        <p class="brand-kicker">Profile</p>
-        <h1>プロフィール</h1>
-      </div>
-    </header>
-    <section class="profile-card" id="profile-body"></section>
-    <button id="btn-logout" class="btn btn-secondary btn-wide">ログアウト</button>
-  </div>
-
-  <!-- 管理画面（講師） -->
-  <div id="screen-admin" class="screen app-screen">
-    <header class="app-header">
-      <div>
-        <p class="brand-kicker">Teacher</p>
-        <h1>管理画面</h1>
-      </div>
-      <button id="btn-refresh-admin" class="btn btn-secondary btn-small">更新</button>
-    </header>
-    <div class="admin-toolbar">
-      <input id="admin-search" type="search" placeholder="名前・IDで検索">
-      <label class="check-label"><input id="admin-show-all" type="checkbox"> 取り組みゼロの生徒も出す</label>
+  <!-- マイページ（単語アプリと同じ並び） -->
+  <div id="screen-mypage" class="screen app-screen">
+    <div class="mypage-header">
+      <h2>マイページ</h2>
     </div>
-    <div id="admin-student-list" class="admin-student-list"></div>
+
+    <div class="mypage-profile-card">
+      <div class="profile-avatar">👤</div>
+      <div id="profile-name-display">
+        <div class="profile-name-text" id="profile-name-text"></div>
+        <button class="edit-name-btn" id="btn-edit-name">✏️ 名前を変更</button>
+      </div>
+      <div id="profile-name-edit" class="hidden">
+        <input type="text" id="edit-name-input" class="auth-input" placeholder="お名前">
+        <div class="profile-name-actions">
+          <button class="btn btn-primary btn-small" id="btn-save-name">保存</button>
+          <button class="btn btn-secondary btn-small" id="btn-cancel-name">キャンセル</button>
+        </div>
+      </div>
+      <div class="profile-id-row">
+        <div id="profile-id-display">
+          <span class="profile-id-label">🪪 ID: </span>
+          <span class="profile-id-text" id="profile-id-text"></span>
+          <button class="edit-name-btn" id="btn-edit-id">✏️ ID変更</button>
+        </div>
+      </div>
+      <p class="profile-note">名前とIDは、単語アプリなどハピクルのほかのアプリと共通です。</p>
+    </div>
+
+    <div class="mypage-section-title">📊 学習の努力量</div>
+    <div class="effort-grid" id="effort-grid"></div>
+
+    <div class="mypage-section-title">📖 チュートリアル</div>
+    <div class="mypage-feedback-area">
+      <p class="feedback-desc">アプリの使い方を最初から確認できます。</p>
+      <button class="btn btn-secondary btn-small" data-open-tutorial>📖 チュートリアルを見る</button>
+    </div>
+
+    <div class="mypage-section-title">💬 フィードバック</div>
+    <div class="mypage-feedback-area">
+      <p class="feedback-desc">添削のおかしな所や、ほしい機能などをお気軽にお寄せください。</p>
+      <button class="btn btn-secondary btn-small" id="btn-report-general">📝 意見・要望を送る</button>
+    </div>
+
+    <div class="mypage-reset-area">
+      <button id="btn-logout" class="btn btn-secondary btn-small">ログアウト</button>
+      <button id="btn-reset" class="btn btn-reset-danger btn-small">🗑️ 学習データをリセット</button>
+    </div>
   </div>
 
-  <div id="screen-admin-student" class="screen app-screen">
-    <header class="sub-header">
-      <button class="back-btn" data-back="screen-admin">戻る</button>
-      <div>
-        <p class="brand-kicker" id="admin-student-id"></p>
-        <h1 id="admin-student-name"></h1>
+  <!-- ID変更 -->
+  <div id="edit-id-modal" class="modal-overlay hidden">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 class="modal-title">🪪 IDを変更</h3>
+        <button class="modal-close-btn" data-close-modal="edit-id-modal">✕</button>
       </div>
-    </header>
-    <section class="stats-row" id="admin-student-stats"></section>
-    <div id="admin-student-records" class="record-list"></div>
+      <p class="edit-id-desc">
+        新しいIDと<strong>現在のパスワード</strong>を入力してください。<br>
+        ※ 変更後は新しいIDでログインしてください（単語アプリなども同じIDになります）。
+      </p>
+      <input type="text" id="edit-id-new" class="auth-input" placeholder="新しいID（半角英数字推奨）" autocomplete="off">
+      <input type="password" id="edit-id-password" class="auth-input" placeholder="現在のパスワード" autocomplete="current-password">
+      <div class="auth-error hidden" id="edit-id-error"></div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary btn-small" data-close-modal="edit-id-modal">キャンセル</button>
+        <button class="btn btn-primary btn-small" id="btn-submit-edit-id">変更する</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 意見・要望 -->
+  <div id="report-modal" class="modal-overlay hidden">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 class="modal-title">📝 報告・意見を送る</h3>
+        <button class="modal-close-btn" data-close-modal="report-modal">✕</button>
+      </div>
+      <div class="report-type-group" id="report-type-group">
+        <button class="report-type-btn active" data-type="ai_error">❌ 添削の誤り</button>
+        <button class="report-type-btn" data-type="feature">💡 機能リクエスト</button>
+        <button class="report-type-btn" data-type="other">💬 その他</button>
+      </div>
+      <textarea id="report-message" class="report-textarea" placeholder="具体的な内容を記入してください（20文字以上）" rows="4"></textarea>
+      <div class="report-char-count" id="report-char-count">0文字（20文字以上必要）</div>
+      <div class="auth-error hidden" id="report-error"></div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary btn-small" data-close-modal="report-modal">キャンセル</button>
+        <button class="btn btn-primary btn-small" id="btn-submit-report" disabled>送信</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 管理画面（単語アプリと同じ並び） -->
+  <div id="screen-admin" class="screen app-screen admin-screen">
+    <div class="admin-header">
+      <div>
+        <div class="logo">🌸 管理画面</div>
+        <div class="subtitle" id="admin-teacher-name"></div>
+      </div>
+      <button id="btn-admin-logout" class="btn btn-secondary btn-small">ログアウト</button>
+    </div>
+
+    <div class="admin-tab-bar">
+      <button class="admin-tab-btn active" id="admin-tab-students" data-admin-tab="students">👥 生徒一覧</button>
+      <button class="admin-tab-btn" id="admin-tab-teachers" data-admin-tab="teachers">🏫 教師一覧</button>
+      <button class="admin-tab-btn" id="admin-tab-topics" data-admin-tab="topics">📝 トピック一覧</button>
+      <button class="admin-tab-btn" id="admin-tab-manual" data-admin-tab="manual">❓ 使い方</button>
+    </div>
+
+    <div id="admin-panel-students">
+      <div class="admin-stats-bar" id="admin-stats-bar"></div>
+      <div class="admin-book-tab-bar" id="admin-mode-tab-bar">
+        <button class="admin-book-tab-btn active" data-admin-mode="essay">✍️ 英作文</button>
+        <button class="admin-book-tab-btn" data-admin-mode="summary">📄 要約（準備中）</button>
+      </div>
+      <div class="admin-toolbar">
+        <input type="text" id="admin-search" class="admin-search" placeholder="生徒名・IDで検索...">
+        <button class="btn btn-secondary btn-small" id="btn-admin-refresh">🔄 更新</button>
+      </div>
+      <div class="admin-filter-bar">
+        <div class="filter-chips" id="admin-archive-chips">
+          <button class="chip active" data-archive="active">在籍中</button>
+          <button class="chip" data-archive="archived">📦 アーカイブ</button>
+          <button class="chip" data-archive="all">全員</button>
+        </div>
+        <label class="filter-toggle"><input type="checkbox" id="admin-show-inactive"> やっていない生徒も表示</label>
+        <span class="admin-hidden-note" id="admin-hidden-note"></span>
+      </div>
+      <div id="admin-table-wrap"><p class="loading-text">データを読み込み中...</p></div>
+    </div>
+
+    <div id="admin-panel-teachers" class="hidden">
+      <div class="admin-stats-bar" id="admin-teachers-stats-bar"></div>
+      <details class="admin-create-teacher" id="admin-create-teacher-details">
+        <summary>➕ 新しい教師アカウントを作成</summary>
+        <div class="admin-create-teacher-form">
+          <input type="text" id="create-teacher-name" class="auth-input" placeholder="お名前（例：田中 太郎）" autocomplete="off">
+          <input type="text" id="create-teacher-id" class="auth-input" placeholder="ID（半角英数字推奨）" autocomplete="off">
+          <input type="text" id="create-teacher-password" class="auth-input" placeholder="パスワード（6文字以上）" autocomplete="off">
+          <div class="auth-error hidden" id="create-teacher-error"></div>
+          <button class="btn btn-primary btn-small" id="btn-create-teacher">作成する</button>
+          <p class="admin-create-note">※ 作成後も今の管理者ログインのまま、新しい教師アカウントが追加されます。単語アプリなど、ハピクルの全アプリで使えるアカウントです。</p>
+        </div>
+      </details>
+      <div class="admin-toolbar">
+        <input type="text" id="admin-teacher-search" class="admin-search" placeholder="教師名・IDで検索...">
+        <button class="btn btn-secondary btn-small" id="btn-admin-teachers-refresh">🔄 更新</button>
+      </div>
+      <div id="admin-teachers-table-wrap"><p class="loading-text">データを読み込み中...</p></div>
+    </div>
+
+    <div id="admin-panel-topics" class="hidden">
+      <div class="admin-toolbar">
+        <input type="text" id="admin-topic-search" class="admin-search" placeholder="TOPIC・日本語・年度・POINTで検索...">
+      </div>
+      <div id="admin-topic-count" class="admin-word-count"></div>
+      <div id="admin-topic-list-wrap"></div>
+    </div>
+
+    <div id="admin-panel-manual" class="hidden"></div>
+  </div>
+
+  <!-- 生徒詳細（教師用） -->
+  <div id="student-detail-modal" class="modal-overlay hidden">
+    <div class="modal-box modal-box-wide">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title" id="detail-student-name"></h3>
+          <div class="detail-credentials">
+            <span class="detail-cred-item">🪪 ID: <strong id="detail-student-id"></strong></span>
+            <span class="detail-cred-item">🔑 PW:
+              <strong id="detail-student-pw"></strong>
+              <button class="btn-pw-toggle" id="btn-pw-toggle">表示</button>
+            </span>
+          </div>
+        </div>
+        <button class="modal-close-btn" data-close-modal="student-detail-modal">✕</button>
+      </div>
+      <div class="detail-tabs">
+        <button class="detail-tab-btn active" data-detail-tab="calendar">📅 カレンダー</button>
+        <button class="detail-tab-btn" data-detail-tab="chart">📈 グラフ</button>
+        <button class="detail-tab-btn" data-detail-tab="notes">📒 英作文</button>
+        <button class="detail-tab-btn" data-detail-tab="history">📝 履歴</button>
+      </div>
+      <div id="detail-body" class="detail-body"></div>
+    </div>
   </div>
 
   <!-- 使い方 -->
-  <div id="tutorial-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="tutorial-title">
-    <div class="modal-card">
+  <div id="tutorial-modal" class="modal-overlay hidden">
+    <div class="modal-box">
       <div class="modal-header">
-        <h2 id="tutorial-title">使い方</h2>
-        <button class="icon-btn" data-close-modal="tutorial-modal" aria-label="閉じる">閉じる</button>
+        <h3 class="modal-title">❓ 使い方</h3>
+        <button class="modal-close-btn" data-close-modal="tutorial-modal">✕</button>
       </div>
       <div id="tutorial-body" class="tutorial-body"></div>
       <button id="btn-finish-tutorial" class="btn btn-primary btn-wide">はじめる</button>
@@ -216,14 +417,14 @@
   </div>
 
   <!-- おすすめフレーズ77 -->
-  <div id="phrases-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="phrases-title">
-    <div class="modal-card modal-wide">
+  <div id="phrases-modal" class="modal-overlay hidden">
+    <div class="modal-box modal-box-wide">
       <div class="modal-header">
-        <h2 id="phrases-title">おすすめフレーズ77</h2>
-        <button class="icon-btn" data-close-modal="phrases-modal" aria-label="閉じる">閉じる</button>
+        <h3 class="modal-title">おすすめフレーズ77</h3>
+        <button class="modal-close-btn" data-close-modal="phrases-modal">✕</button>
       </div>
       <p class="hint">理由の文を書くときに使ってみよう。これ以外の表現を使ってもOK。</p>
-      <input id="phrase-search" type="search" placeholder="英語・日本語で検索">
+      <input id="phrase-search" class="admin-search" type="search" placeholder="英語・日本語で検索">
       <ol id="phrase-list" class="phrase-list"></ol>
     </div>
   </div>
@@ -239,11 +440,20 @@
 
   <div id="toast" class="toast hidden" role="status"></div>
 
+  <!-- タブバー（単語アプリと同じ形） -->
   <nav id="tab-bar" class="tab-bar hidden" aria-label="メインメニュー">
-    <button class="tab-btn active" data-tab-screen="screen-home">書く</button>
-    <button class="tab-btn" data-tab-screen="screen-notes">ノート</button>
-    <button class="tab-btn" data-tab-screen="screen-profile">プロフィール</button>
-    <button id="tab-admin" class="tab-btn hidden" data-tab-screen="screen-admin">管理</button>
+    <button class="tab-btn active" id="tab-write" data-tab-screen="screen-home">
+      <span class="tab-icon">✍️</span><span class="tab-label">書く</span>
+    </button>
+    <button class="tab-btn" id="tab-stats" data-tab-screen="screen-stats">
+      <span class="tab-icon">📊</span><span class="tab-label">学習データ</span>
+    </button>
+    <button class="tab-btn" id="tab-mypage" data-tab-screen="screen-mypage">
+      <span class="tab-icon">👤</span><span class="tab-label">マイページ</span>
+    </button>
+    <button class="tab-btn hidden" id="tab-admin" data-tab-screen="screen-admin">
+      <span class="tab-icon">🏫</span><span class="tab-label">管理</span>
+    </button>
   </nav>
 
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
