@@ -488,7 +488,7 @@ details.work-panel summary { font-weight: 800; cursor: pointer; }
 .chart-label {font-size: 9px; fill: #999; font-family: sans-serif;}
 .col-name-link {cursor: pointer;}
 .col-name-link:hover strong {color: #FF6B9D; text-decoration: underline;}
-.tab-bar {max-width: 480px; left: 50%; transform: translateX(-50%);}
+.tab-bar {width: 100%; max-width: 480px; left: 50%; transform: translateX(-50%);} /* 単語アプリは width が無く、スマホで画面の半分の幅になっていた */
 .tab-btn .tab-label {font-size: .6rem;}
 .stats-header {display: flex; justify-content: space-between; align-items: center;
   padding: 24px 0 16px;}
