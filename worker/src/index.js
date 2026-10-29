@@ -1,23 +1,13 @@
 // ハピクル 英検準1級ライティング：AI添削の中継サーバー（Cloudflare Worker）
-// - APIキーはここ（Workerの秘密の設定）にだけ置き、アプリ（GitHub Pages）には置かない
+// - AIは2通り：PROVIDER="workers-ai"（Cloudflareの無料枠・キー不要）／"anthropic"（Claude API。キーはWorkerの秘密の設定にだけ置く）
+// - APIキーはアプリ（GitHub Pages）には置かない
 // - ハピクルのアプリでログインしている人だけが呼べる（Firebase IDトークンを検証）
 // - 1人あたり・全体の1日の回数に上限をかける（KV）
 import Anthropic from "@anthropic-ai/sdk";
 import { verifyFirebaseIdToken } from "./auth.js";
 import { callClaude } from "./claude.js";
-import {
-  buildJaReviewPrompt,
-  buildEnReviewPrompt,
-  buildJaReviewInput,
-  buildEnReviewInput,
-  JA_REVIEW_SCHEMA,
-  EN_REVIEW_SCHEMA
-} from "./prompts.js";
-
-const ROUTES = {
-  "/api/review-ja": { system: buildJaReviewPrompt, input: buildJaReviewInput, schema: JA_REVIEW_SCHEMA },
-  "/api/review-en": { system: buildEnReviewPrompt, input: buildEnReviewInput, schema: EN_REVIEW_SCHEMA }
-};
+import { callWorkersAI, FreeQuotaError } from "./workersai.js";
+import { ROUTES, stripScoreTalk } from "./prompts.js";
 
 export default {
   async fetch(request, env) {
@@ -27,7 +17,13 @@ export default {
 
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
     if (request.method === "GET" && url.pathname === "/health") {
-      return json({ ok: true, model: env.MODEL, hasKey: Boolean(env.ANTHROPIC_API_KEY) }, 200, cors);
+      const provider = providerOf(env);
+      return json({
+        ok: true,
+        provider,
+        model: provider === "workers-ai" ? env.WAI_MODEL : env.MODEL,
+        ready: provider === "workers-ai" ? Boolean(env.AI) : Boolean(env.ANTHROPIC_API_KEY)
+      }, 200, cors);
     }
 
     const route = ROUTES[url.pathname];
@@ -41,7 +37,7 @@ export default {
     } catch (error) {
       return json({ error: "unauthorized", message: "ログインし直してください。" }, 401, cors);
     }
-    if (!env.ANTHROPIC_API_KEY) return json({ error: "ai_key_missing", message: "AI添削の準備中です（AIのキーがまだ設定されていません）。先生に知らせてください。" }, 503, cors);
+    if (providerOf(env) === "anthropic" && !env.ANTHROPIC_API_KEY) return json({ error: "ai_key_missing", message: "AI添削の準備中です（AIのキーがまだ設定されていません）。先生に知らせてください。" }, 503, cors);
 
     let body;
     try {
@@ -55,16 +51,24 @@ export default {
     if (limited) return json({ error: "rate_limited", message: limited }, 429, cors);
 
     try {
-      const result = await callClaude(env, route, body);
-      console.log(JSON.stringify({ route: url.pathname, uid: user.uid, usage: result.usage }));
-      return json({ result: result.data }, 200, cors);
+      const started = Date.now();
+      const result = providerOf(env) === "workers-ai" ? await callWorkersAI(env, route, body) : await callClaude(env, route, body);
+      console.log(JSON.stringify({ route: url.pathname, uid: user.uid, provider: providerOf(env), ms: Date.now() - started, usage: result.usage }));
+      return json({ result: stripScoreTalk(result.data) }, 200, cors);
     } catch (error) {
       console.error(url.pathname, error?.status || "", error?.message || error);
+      if (error instanceof FreeQuotaError) {
+        return json({ error: "free_quota", message: "今日のAI添削の無料分を使い切りました。明日の朝9時からまた使えます。" }, 429, cors);
+      }
       const status = error instanceof Anthropic.RateLimitError ? 429 : 502;
       return json({ error: "ai_failed", message: "AIの添削に失敗しました。少し待ってからもう一度押してください。" }, status, cors);
     }
   }
 };
+
+function providerOf(env) {
+  return env.PROVIDER === "anthropic" ? "anthropic" : "workers-ai";
+}
 
 function validateBody(body, path) {
   if (!body || typeof body !== "object") throw new Error("body must be an object");

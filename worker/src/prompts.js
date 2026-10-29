@@ -31,7 +31,8 @@ const PHRASE_LIST = PHRASES.map((p) => `${p.no}. ${p.en}（${p.ja}）`).join("\n
 const ROLE = `あなたは、ハピクル英語塾の田中先生の方針で、英検準1級の英作文を指導するアシスタントです。
 相手は高校生です。説明は日本語で、短く、やさしく書きます。専門用語は文法の名前（受動態・動名詞など）だけにします。
 生徒が書くのは「理由」の部分（2・3段落目）だけです。理由は2つ、それぞれ3文です。
-各理由の3文の役割の目安：1文目＝理由そのもの／2文目＝具体例・根拠（for example など）／3文目＝まとめや今の問題点。`;
+各理由の3文の役割の目安：1文目＝理由そのもの／2文目＝具体例・根拠（for example など）／3文目＝まとめや今の問題点。
+点数・スコア・合格できそうかどうかは書きません（田中先生の方針：採点はしない。生徒と先生の間に入って、書き方を手伝うのが役目）。`;
 
 export function buildJaReviewPrompt() {
   return `${ROLE}
@@ -42,7 +43,7 @@ export function buildJaReviewPrompt() {
 ## 直し方の決まり
 1. 生徒の言いたいことは変えない。くみ取って、形だけ直す。足りない言葉は最小限だけ補う。
 2. 中学3年間で習う文法で英語にできる日本語にする。使ってよい文法の例：現在・過去・未来、進行形、現在完了、受動態、助動詞（can / should / must / have to）、不定詞、動名詞、比較、関係代名詞、分詞の後置修飾、It is 〜 for A to …、make / let / help + 人 + 動詞、接続詞（because / when / if / although）。
-3. 主語をはっきりさせる。1文に言いたいことは1つ。主語と述語をきちんと対応させる。「〜的な」「〜とか」などのあいまいな言い方や、日本語特有の省略を避ける。
+3. 主語をはっきりさせる。生徒の1文は、直したあとも1文にする（途中で句点を打って2文に分けない）。長い文は、接続詞（because / when / if / although）や関係代名詞でつなげて言える形にする。主語と述語をきちんと対応させる。「〜的な」「〜とか」などのあいまいな言い方や、日本語特有の省略を避ける。
 4. 難しすぎる日本語（大人の言い回し、四字熟語、抽象的な名詞の重ね）は、中学の文法で言える形にほどく。
 5. 英語は書かない（英訳は生徒の仕事）。ただし comment の中で「〜という英語の形を見越して」と文法の形を示すのはよい。
 6. 文として成り立っていない・空欄の場合は、理由の流れとPOINTから自然な文を最小限で補い、comment でそう伝える。
@@ -62,6 +63,14 @@ export function buildJaReviewPrompt() {
 
 ## おすすめフレーズ（田中先生の資料。これに限らない）
 ${PHRASE_LIST}
+
+## 出す前の見直し
+- revised は6つとも日本語か（英語の文を書いていないか。英訳は生徒の仕事）
+- revised は6つとも1文か（句点は文の終わりの1つだけ）
+- 主語と述語が対応しているか。悪い例：「私は、スマホを使うことで、勉強時間が減った」（「私は」に合う述語がない）→「スマホを使うことで、私の勉強時間は減った」
+- 生徒が書いた具体的な中身（例・数・場面）を落としていないか
+- 難しい言葉（大人の言い回し・抽象的な名詞）が残っていないか
+- comment と overall はすべて日本語か
 
 ## 出力
 指定のJSONだけを出す。sentences は理由1の1〜3文目、理由2の1〜3文目の順に6個。reason は 1 か 2、index は 1〜3。original には生徒の文をそのまま入れる。`;
@@ -112,7 +121,12 @@ paragraph1 と paragraph4 に、自然な日本語訳をつける（手本の日
 ${SCORING}
 
 ## overall
-全体へのひとこと（2〜3文）。最後に、全文の語数が120〜150語の目安から大きく外れそうなら一言そえる。
+全体へのひとこと（2〜3文）。語数には触れない（語数はアプリが数えて表示する）。
+
+## 出す前の見直し
+- 1段落目の2文目と3文目、4段落目の結論と1段落目の3文目は、文法の形が変わっているか
+- 4段落目は、先生の枠を句読点まで変えずに使っているか
+- comment・notes・viewpoints・overall はすべて日本語か
 
 ## 出力
 指定のJSONだけを出す。corrections は理由1の1〜3文目、理由2の1〜3文目の順に6個。student には生徒の英文をそのまま入れる。paragraph1.text と paragraph4.text は、それぞれ段落全体を1つの文字列で。`;
@@ -135,7 +149,7 @@ export const JA_REVIEW_SCHEMA = {
           reason: { type: "integer" },
           index: { type: "integer" },
           original: str,
-          revised: str,
+          revised: { type: "string", description: "直した日本語の文（日本語で1文。英語は書かない）" },
           comment: str,
           grammar: { type: "array", items: str },
           phraseNo: { type: "integer" }
@@ -221,4 +235,67 @@ export function buildEnReviewInput(body) {
     lines.push("");
   });
   return lines.join("\n");
+}
+
+// 日本語の添削の見直し（2回目）。Cloudflare の無料のAI（Gemma 4）は1回目で中身を変えたり落としたりすることがあるので、
+// 生徒の文と見比べて直させる（2026-10-29 の試験で、「充実した」→「重要になってきている」のように中身が変わった）
+export function buildJaCheckPrompt() {
+  return `${ROLE}
+
+## あなたの仕事：日本語の添削の見直し
+別の先生が、生徒の日本語6文を「英語にしやすい日本語」（中学3年間で習う文法で英語にできる日本語）に直しました。あなたはそれを生徒の文と1文ずつ見比べて、よくない所だけを直します。よい文はそのまま返します。
+
+## 見直すこと
+1. 中身が変わっていないか。直した文が生徒の文と違うことを言っていたら、生徒の言いたいことに戻す。
+   例：生徒「この町の図書館は本が充実している」→ 直した文「この町の図書館は大切だ」は中身が変わっている →「この町の図書館には、たくさんの本がある」
+2. 中身が落ちていないか。生徒が書いた具体的な中身（「私の経験では」「〜の調査によると」のような情報のもと、数、物の名前、場面）が消えていたら、やさしい言葉で入れ直す。
+3. 主語と述語がねじれていないか。
+   例：「私は、スマホを使うことで、勉強時間が減った」（「私は」に合う述語がない）→「スマホを使うことで、私の勉強時間は減った」
+4. 1文のままか（句点は文の終わりの1つだけ）。
+5. 日本語か（英語の文を書いていないか。英訳は生徒の仕事）。
+6. やさしいか（大人の言い回し・四字熟語・抽象的な名詞が残っていないか）。
+直した文を変えたときは、comment と grammar もその文に合わせて書き直す。comment は生徒向けで、「1回目の先生」のことには触れない。
+
+## 出力
+受け取ったものと同じ形のJSON（sentences 6個と overall）。original には生徒の文をそのまま入れる。sentences の順番は変えない。`;
+}
+
+export function buildJaCheckInput(body, first) {
+  const lines = [topicBlock(body.topic, body.stance), ""];
+  (first.sentences || []).forEach((s) => {
+    lines.push(`理由${s.reason}の${s.index}文目`);
+    lines.push(`生徒の文：${s.original}`);
+    lines.push(`直した文：${s.revised}`);
+    lines.push(`コメント：${s.comment}`);
+    lines.push(`文法：${(s.grammar || []).join("・")}　フレーズ番号：${s.phraseNo || 0}`);
+    lines.push("");
+  });
+  lines.push(`全体へのひとこと：${first.overall || ""}`);
+  return lines.join("\n");
+}
+
+// 添削サーバーの2つの窓口（Worker 本体と手元の試験で共通）。check＝無料のAIのときだけ使う見直し
+export const ROUTES = {
+  "/api/review-ja": {
+    system: buildJaReviewPrompt,
+    input: buildJaReviewInput,
+    schema: JA_REVIEW_SCHEMA,
+    check: { system: buildJaCheckPrompt, input: buildJaCheckInput, schema: JA_REVIEW_SCHEMA }
+  },
+  "/api/review-en": { system: buildEnReviewPrompt, input: buildEnReviewInput, schema: EN_REVIEW_SCHEMA }
+};
+
+// 点数・合格の話をした文を取り除く（田中先生の方針：採点はしない。無料のAIは指示しても書くことがあった）
+const SCORE_TALK = /スコア|点数|満点|得点|何点|合格/;
+export function stripScoreTalk(data) {
+  const clean = (text) => {
+    if (typeof text !== "string" || !SCORE_TALK.test(text)) return text;
+    const parts = text.match(/[^。！!？?]+[。！!？?]?/g) || [text];
+    return parts.filter((part) => !SCORE_TALK.test(part)).join("").trim();
+  };
+  if (data && typeof data === "object") {
+    data.overall = clean(data.overall);
+    if (data.viewpoints) for (const key of Object.keys(data.viewpoints)) data.viewpoints[key] = clean(data.viewpoints[key]);
+  }
+  return data;
 }

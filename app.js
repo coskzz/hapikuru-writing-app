@@ -1036,7 +1036,7 @@
       reasons: editing.reasons.map((reason) => ({ point: reason.point, ja: reason.ja.map((s) => s.trim()) }))
     };
     try {
-      setBusy(true, "AIが日本語を添削しています");
+      setBusy(true, "AIが日本語を添削しています（1分ほどかかります）");
       const result = await callAI("/api/review-ja", body);
       editing.jaReview = normalizeJaReview(result, editing);
       editing.step = "jaReview";
@@ -1065,7 +1065,7 @@
     };
     let result;
     try {
-      setBusy(true, "AIが英文を添削して、全文を組み立てています");
+      setBusy(true, "AIが英文を添削して、全文を組み立てています（1分ほどかかります）");
       result = await callAI("/api/review-en", body);
     } catch (error) {
       setBusy(false);

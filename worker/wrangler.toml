@@ -1,6 +1,7 @@
 # ハピクル 英検準1級ライティング：AI添削の中継サーバー
 # 配置：cd ~/hapikuru-writing-app/worker && npx wrangler deploy
-# APIキー（秘密）：npx wrangler secret put ANTHROPIC_API_KEY   ← ここには書かない
+# AI：PROVIDER = "workers-ai"（Cloudflareの無料枠・キー不要）か "anthropic"（Claude API）
+# Claude にするとき：PROVIDER を "anthropic" にして、npx wrangler secret put ANTHROPIC_API_KEY   ← キーはここには書かない
 name = "hapikuru-writing-ai"
 main = "src/index.js"
 compatibility_date = "2026-10-01"
@@ -9,6 +10,8 @@ account_id = "d2afd6c90e2ae2cc5fb60e6979299cd8"
 workers_dev = true
 
 [vars]
+PROVIDER = "workers-ai"
+WAI_MODEL = "@cf/google/gemma-4-26b-a4b-it"
 MODEL = "claude-opus-5-5"
 EFFORT = "medium"
 FIREBASE_PROJECT_ID = "hapikuru-passtan-app-da588"
@@ -20,3 +23,7 @@ DAILY_LIMIT_TOTAL = "600"
 [[kv_namespaces]]
 binding = "USAGE"
 id = "bb97698f55114b86874deeb1500d8c5e"
+
+# Cloudflare Workers AI（無料枠：1日10,000ニューロン。日本時間の朝9時に戻る）
+[ai]
+binding = "AI"
