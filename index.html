@@ -119,6 +119,103 @@
     </main>
   </div>
 
+  <!-- フレーズを覚える（単語アプリの暗記の仕組みを写した）：セクション → モード → 4択／フラッシュカード → 結果 -->
+  <div id="screen-phrase-home" class="screen app-screen phrase-screen">
+    <div class="mode-header">
+      <button class="back-btn" data-go="screen-home">← 戻る</button>
+      <h2>フレーズを覚える！</h2>
+    </div>
+    <p class="phrase-lead">田中先生のおすすめフレーズ77です。英作文の理由の文で使える形を、20個ずつのセクションで覚えます。</p>
+    <div id="phrase-section-grid" class="section-grid"></div>
+    <button class="text-btn phrase-list-link" data-open-phrases>77個を一覧で見る</button>
+  </div>
+
+  <div id="screen-phrase-mode" class="screen app-screen phrase-screen">
+    <div class="mode-header">
+      <button class="back-btn" data-phrase-to-sections>← 戻る</button>
+      <h2 id="phrase-mode-title"></h2>
+    </div>
+    <div class="mode-stats" id="phrase-mode-stats"></div>
+    <div class="order-mode-area">
+      <div class="order-mode-label">📋 出題順序</div>
+      <div class="order-toggle">
+        <button class="order-btn active" data-phrase-order="random">🔀 ランダム</button>
+        <button class="order-btn" data-phrase-order="sequential">📋 順番通り</button>
+      </div>
+      <div class="order-warn-banner hidden" id="phrase-order-warn">⚠️ 2周目以降の合格扱いになるには、ランダムでクリアする必要があります。順番通りで解いた分は、合格回数（🏆）に数えません。</div>
+    </div>
+    <div class="mode-buttons">
+      <button class="btn btn-resume btn-large hidden" id="btn-phrase-resume" data-phrase-resume>⏸ 続きから</button>
+      <div class="mode-section-label">── 本番（全問を通しで解く・1回で全問正解すると合格）──</div>
+      <button class="btn btn-primary btn-large" id="btn-phrase-normal" data-phrase-start="normal">▶ 本番テスト（全問を通しで）</button>
+      <div class="mode-section-label">── 練習（間違えたフレーズだけ・点数と合格には入りません）──</div>
+      <button class="btn btn-review btn-large" id="btn-phrase-review" data-phrase-start="review">⭐ バツ練習</button>
+      <button class="btn btn-lucky-mode btn-large" id="btn-phrase-lucky" data-phrase-start="lucky">🔺 マグレ練習</button>
+      <button class="btn btn-combined-mode btn-large" id="btn-phrase-combined" data-phrase-start="review-combined">⭐🔺 バツ＋マグレ練習</button>
+      <div class="mode-section-label">── フラッシュカード ──</div>
+      <button class="btn btn-flashcard btn-large" id="btn-phrase-fc" data-phrase-fc="all">🃏 フラッシュカードモード</button>
+      <button class="btn btn-flashcard-review btn-large" id="btn-phrase-fc-review" data-phrase-fc="review">🃏⭐ わからないフレーズのみ復習</button>
+    </div>
+  </div>
+
+  <div id="screen-phrase-quiz" class="screen app-screen phrase-screen">
+    <div class="quiz-header">
+      <button class="back-btn" data-phrase-quiz-back>← 戻る</button>
+      <div class="quiz-info">
+        <span id="phrase-quiz-section"></span>
+        <span id="phrase-quiz-mode"></span>
+      </div>
+    </div>
+    <div class="progress-bar-wrap"><div class="progress-bar" id="phrase-progress-bar"></div></div>
+    <div class="progress-text" id="phrase-progress-text"></div>
+    <div class="quiz-card">
+      <div class="word-display phrase-display" id="phrase-display" data-phrase-speak></div>
+      <div class="word-tap-hint">🔊 タップで発音</div>
+      <div class="word-no" id="phrase-no"></div>
+    </div>
+    <div class="choices phrase-choices" id="phrase-choices"></div>
+    <div class="quiz-result hidden" id="phrase-result"></div>
+    <div class="quiz-next-area hidden" id="phrase-next"></div>
+  </div>
+
+  <div id="screen-phrase-fc" class="screen app-screen phrase-screen">
+    <div class="quiz-header">
+      <button class="back-btn" data-phrase-fc-back>← 戻る</button>
+      <div class="quiz-info">
+        <span id="phrase-fc-section"></span>
+        <span>🃏 フラッシュカード</span>
+      </div>
+    </div>
+    <div class="progress-bar-wrap"><div class="progress-bar" id="phrase-fc-progress"></div></div>
+    <div class="fc-tabs">
+      <button class="fc-tab active" data-phrase-tab="en">フレーズ</button>
+      <button class="fc-tab" data-phrase-tab="ja">意味</button>
+    </div>
+    <div class="fc-counter" id="phrase-fc-counter"></div>
+    <div class="fc-content">
+      <div id="phrase-fc-main" class="fc-word-en"></div>
+      <div class="fc-wordno" id="phrase-fc-no"></div>
+    </div>
+    <div class="fc-actions"><button class="fc-play-btn" data-phrase-fc-speak aria-label="発音">▶</button></div>
+    <div class="fc-bottom">
+      <button class="fc-btn-unknown" data-phrase-mark="unknown">わからない</button>
+      <button class="fc-btn-known" data-phrase-mark="known">わかる</button>
+    </div>
+  </div>
+
+  <div id="screen-phrase-complete" class="screen app-screen phrase-screen">
+    <div class="complete-content">
+      <div class="complete-icon">🎉</div>
+      <h2 id="phrase-complete-title"></h2>
+      <div class="complete-stats" id="phrase-complete-stats"></div>
+      <div class="complete-buttons">
+        <button class="btn btn-review hidden" id="btn-phrase-retry-unknown">⭐ わからないのみもう一度</button>
+        <button class="btn btn-primary" id="btn-phrase-retry">もう一度</button>
+        <button class="btn btn-secondary" data-phrase-to-sections>セクションを選ぶ</button>
+      </div>
+    </div>
+  </div>
+
   <!-- 書く画面（ステップ1〜4） -->
   <div id="screen-write" class="screen app-screen">
     <header class="sub-header">

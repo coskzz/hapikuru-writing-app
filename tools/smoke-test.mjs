@@ -104,7 +104,80 @@ try {
   check(true, "「書く」リンクを押すと書く画面に移る");
   check(await evaluate(`!document.querySelector('#tab-admin').classList.contains('hidden')`), "講師（デモ）には管理タブが出る");
 
-  check(await evaluate(`document.querySelectorAll('.topic-card:not(.example-card)').length === window.WRITING_TOPICS.length && window.WRITING_TOPICS.length >= 30 && document.querySelector('.topic-card').classList.contains('example-card')`), "いちばん上に例題、その下に過去問トピックが全件並ぶ");
+  check(await evaluate(`(() => { const cards = [...document.querySelectorAll('#topic-list .topic-card')]; return cards[0].classList.contains('phrase-card') && cards[1].classList.contains('example-card') && cards.filter((c) => !c.classList.contains('example-card') && !c.classList.contains('phrase-card')).length === window.WRITING_TOPICS.length && window.WRITING_TOPICS.length >= 30; })()`), "いちばん上に「フレーズを覚える！」、次に例題、その下に過去問トピックが全件並ぶ");
+
+  // ===== フレーズを覚える（単語アプリの暗記の仕組み） =====
+  const answerPhrase = (wrong) => evaluate(`(() => {
+    const en = document.querySelector('#phrase-display').textContent;
+    const p = window.WRITING_PHRASES.find((x) => x.en === en);
+    const buttons = [...document.querySelectorAll('#phrase-choices .choice-btn')];
+    const right = buttons.find((b) => b.textContent === p.ja);
+    (${wrong} ? buttons.find((b) => b !== right) : right).click();
+    const next = document.querySelector(${wrong} ? '[data-phrase-next]' : '[data-phrase-confirm="sure"]');
+    next.click();
+    return true;
+  })()`);
+  const runPhraseQuiz = async (wrongFirst) => {
+    for (let i = 0; i < 25; i += 1) {
+      if (await evaluate(`document.querySelector('#screen-phrase-complete.active') !== null`)) break;
+      await answerPhrase(wrongFirst && i === 0);
+    }
+    await waitFor(`document.querySelector('#screen-phrase-complete.active')`, "フレーズの結果画面");
+  };
+  await evaluate(`document.querySelector('[data-phrase-home]').click(); true`);
+  await waitFor(`document.querySelector('#screen-phrase-home.active')`, "フレーズのセクション画面");
+  check(await evaluate(`document.querySelectorAll('#phrase-section-grid .section-card').length === 4 && document.querySelector('#tab-write').classList.contains('active')`), "フレーズは20個ずつ4セクション（書くタブのまま）");
+  await shot("03c_phrase_sections");
+  await evaluate(`document.querySelector('[data-phrase-section="p1"]').click(); true`);
+  await waitFor(`document.querySelector('#screen-phrase-mode.active')`, "フレーズのモード画面");
+  check(await evaluate(`document.querySelector('#btn-phrase-review').disabled && document.querySelector('#btn-phrase-fc-review').disabled && !document.querySelector('#btn-phrase-normal').disabled`), "まだ間違えていないので、バツ練習・わからない復習は押せない");
+  await shot("03d_phrase_mode");
+  await evaluate(`document.querySelector('#btn-phrase-normal').click(); true`);
+  await waitFor(`document.querySelector('#screen-phrase-quiz.active')`, "フレーズの4択");
+  check(await evaluate(`document.querySelectorAll('#phrase-choices .choice-btn').length === 4 && new Set([...document.querySelectorAll('#phrase-choices .choice-btn')].map((b) => b.textContent)).size === 4`), "4択（英語のフレーズ→日本語の意味。選択肢はすべて違う）");
+  await shot("03e_phrase_quiz");
+  await runPhraseQuiz(true);
+  check(await evaluate(`document.querySelector('#phrase-complete-title').textContent === '本番テスト終了' && document.querySelector('#phrase-complete-stats').textContent.includes('19/20')`), "本番で1問まちがえると 19/20・合格にならない");
+  await shot("03f_phrase_complete");
+  await evaluate(`document.querySelector('#screen-phrase-complete [data-phrase-to-sections]').click(); document.querySelector('[data-phrase-section="p1"]').click(); true`);
+  check(await evaluate(`!document.querySelector('#btn-phrase-review').disabled && document.querySelector('#phrase-mode-stats').textContent.includes('残りのバツ: 1 個')`), "まちがえたフレーズが「残りのバツ」1個になり、バツ練習が押せる");
+  await evaluate(`document.querySelector('#btn-phrase-review').click(); true`);
+  await waitFor(`document.querySelector('#screen-phrase-quiz.active')`, "バツ練習");
+  await runPhraseQuiz(false);
+  await evaluate(`document.querySelector('#screen-phrase-complete [data-phrase-to-sections]').click(); document.querySelector('[data-phrase-section="p1"]').click(); true`);
+  check(await evaluate(`document.querySelector('#btn-phrase-review').disabled && document.querySelector('#phrase-mode-stats').textContent.includes('19/20')`), "バツ練習で正解するとバツが消える（本番の点数 19/20 は変わらない）");
+  await evaluate(`document.querySelector('#btn-phrase-normal').click(); true`);
+  await waitFor(`document.querySelector('#screen-phrase-quiz.active')`, "本番2回目");
+  await runPhraseQuiz(false);
+  check(await evaluate(`document.querySelector('#phrase-complete-title').textContent.includes('合格') && document.querySelector('#phrase-complete-stats').textContent.includes('20/20')`), "本番を1回で全問正解すると合格（🏆）");
+  await evaluate(`document.querySelector('#screen-phrase-complete [data-phrase-to-sections]').click(); true`);
+  check(await evaluate(`(() => { const card = document.querySelector('[data-phrase-section="p1"]'); return card.classList.contains('cleared') && card.textContent.includes('🏆1') && card.textContent.includes('✅'); })()`), "合格したセクションに ✅ と 🏆1 が付く");
+  await evaluate(`document.querySelector('[data-phrase-section="p1"]').click(); document.querySelector('#btn-phrase-fc').click(); true`);
+  await waitFor(`document.querySelector('#screen-phrase-fc.active')`, "フラッシュカード");
+  await evaluate(`document.querySelector('[data-phrase-tab="ja"]').click(); true`);
+  check(await evaluate(`window.WRITING_PHRASES.some((p) => p.ja === document.querySelector('#phrase-fc-main').textContent)`), "フラッシュカードの「意味」タブで日本語が出る");
+  await shot("03g_phrase_flashcard");
+  await evaluate(`(() => { document.querySelector('[data-phrase-mark="unknown"]').click(); for (let i = 0; i < 19; i += 1) document.querySelector('[data-phrase-mark="known"]').click(); return true; })()`);
+  await waitFor(`document.querySelector('#screen-phrase-complete.active')`, "フラッシュカードの結果");
+  check(await evaluate(`document.querySelector('#phrase-complete-stats').textContent.includes('わからない: 1') && !document.querySelector('#btn-phrase-retry-unknown').classList.contains('hidden')`), "フラッシュカード：わからない1個を、もう一度だけめくれる");
+  await evaluate(`document.querySelector('#screen-phrase-complete [data-phrase-to-sections]').click(); document.querySelector('[data-phrase-section="p1"]').click(); true`);
+  check(await evaluate(`!document.querySelector('#btn-phrase-fc-review').disabled && document.querySelector('#phrase-mode-stats').textContent.includes('次の本番は2周目')`), "わからないにしたフレーズは「わからないのみ復習」に入る／次の本番は2周目");
+  await evaluate(`document.querySelector('#btn-phrase-normal').click(); true`);
+  await waitFor(`document.querySelector('#screen-phrase-quiz.active')`, "本番2周目");
+  await answerPhrase(false); await answerPhrase(false); await answerPhrase(false);
+  await evaluate(`document.querySelector('[data-phrase-quiz-back]').click(); true`);
+  check(await evaluate(`!document.querySelector('#btn-phrase-resume').classList.contains('hidden') && document.querySelector('#btn-phrase-resume').textContent.includes('あと17問')`), "本番を途中でやめると「続きから（あと17問）」が出る");
+  await evaluate(`document.querySelector('#btn-phrase-resume').click(); true`);
+  check(await evaluate(`document.querySelector('#phrase-progress-text').textContent.startsWith('3 / 20') && document.querySelector('#phrase-quiz-mode').textContent.includes('2周目')`), "続きから再開すると 3/20 から（2周目）");
+  await evaluate(`document.querySelector('[data-phrase-quiz-back]').click(); true`);
+  check(await evaluate(`(() => { const data = Object.keys(localStorage).filter((k) => !k.includes('phrase_resume')).map((k) => localStorage.getItem(k)).join(''); return data.includes('"phrase"') && data.includes('"passCount":1'); })()`), "フレーズの記録（合格・バツ）がモジュールの記録に保存される");
+  await evaluate(`document.querySelector('#tab-stats').click(); true`);
+  await waitFor(`document.querySelector('#screen-stats.active')`, "学習データ");
+  await evaluate(`document.querySelector('[data-history-filter="phrase"][data-history-target="stats"]').click(); true`);
+  check(await evaluate(`(() => { const items = document.querySelectorAll('#stats-history .history-item'); return items.length >= 4 && document.querySelector('#stats-history').textContent.includes('🏆 合格'); })()`), "学習データの履歴に「フレーズ」の行（合格・途中でやめた など）が出る");
+  await evaluate(`document.querySelector('[data-history-filter="all"][data-history-target="stats"]').click(); document.querySelector('#tab-write').click(); true`);
+  await waitFor(`document.querySelector('#screen-home.active')`, "書く画面に戻る");
+  check(await evaluate(`document.querySelector('.phrase-card').textContent.includes('合格 1/4')`), "書くの「フレーズを覚える！」のカードに合格したセクションの数が出る");
   await evaluate(`(() => { const box = document.querySelector('#topic-search'); box.value = 'vegetarian'; box.dispatchEvent(new Event('input', { bubbles: true })); return true; })()`);
   check(await evaluate(`document.querySelectorAll('.topic-card').length === 1`), "トピックを検索で絞れる");
   await evaluate(`(() => { const box = document.querySelector('#topic-search'); box.value = ''; box.dispatchEvent(new Event('input', { bubbles: true })); return true; })()`);
@@ -161,7 +234,7 @@ try {
   check(wordText.startsWith("160語"), `回答例と同じ全文の語数が160語になる（表示：${wordText}）`);
   check(await evaluate(`document.querySelectorAll('.essay-paragraph').length === 4`), "全文が4段落で出る");
   check(await evaluate(`document.querySelector('#copy-block').textContent.includes('■ 全文（160語）')`), "LINE用のコピー欄に全文が入る");
-  check(await evaluate(`document.querySelector('[data-line-share]').href.startsWith('https://line.me/R/share?text=')`), "LINEで送るボタンのリンクができる");
+  check(await evaluate(`document.querySelector('[data-line-share]').href === 'https://lin.ee/q1RMWbS'`), "LINEで送るボタンがハピクルのLINE（lin.ee/q1RMWbS）を開く");
   await shot("07_result");
   await evaluate(`document.querySelector('[data-toggle-memorize]').click(); true`);
   check(await evaluate(`document.body.classList.contains('memorize-mode')`), "1・4段落をかくせる");
@@ -171,7 +244,7 @@ try {
   await waitFor(`document.querySelector('#screen-stats.active') && document.querySelectorAll('#notes-list .record-row').length === 1`, "学習データのノートに1件");
   check(true, "学習データのノートに1件たまる");
   check(await evaluate(`document.querySelector('#streak-num').textContent === '1' && document.querySelector('#stats-points').textContent === '10'`), "連続学習日数1日・ポイント10が出る");
-  check(await evaluate(`document.querySelectorAll('#stats-history .history-item').length === 2`), "履歴に「日本語の添削」と「全文ができた」の2件");
+  check(await evaluate(`(() => { const texts = [...document.querySelectorAll('#stats-history .history-item')].map((el) => el.textContent).filter((t) => !t.includes('フレーズ')); return texts.length === 2 && texts.some((t) => t.includes('日本語の添削')) && texts.some((t) => t.includes('全文ができた')); })()`), "履歴に「日本語の添削」と「全文ができた」の2件（フレーズの行は別）");
   check(await evaluate(`!!document.querySelector('#stats-calendar .mday-today .mday-badge')`), "カレンダーの今日に題数が出る");
   await shot("09_stats");
   await evaluate(`document.querySelector('#notes-list .record-row').click(); true`);

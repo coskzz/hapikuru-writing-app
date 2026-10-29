@@ -9,6 +9,8 @@
   const STEPS = ["ja", "jaReview", "en", "result"];
   const POINTS_PER_ESSAY = 10;
   const HISTORY_MAX = 300;
+  // 先生に質問するLINE（ハピクル英語塾の公式アカウント）。文面は渡せないので、押したときに質問用の文をコピーしてから開く
+  const LINE_URL = "https://lin.ee/q1RMWbS";
 
   const TOPICS = window.WRITING_TOPICS || [];
   const PHRASES = window.WRITING_PHRASES || [];
@@ -238,6 +240,7 @@
     // 画面の中で作る部品は、まとめてここで受ける
     document.addEventListener("click", (event) => {
       const target = event.target;
+      if (handlePhraseClick(target)) return;
       if (target.closest("[data-open-phrases]")) openModal("phrases-modal");
       if (target.closest("[data-open-tutorial]")) openModal("tutorial-modal");
       const videoButton = target.closest("[data-open-video]");
@@ -276,6 +279,8 @@
       openStats();
     } else if (screen === "screen-mypage") {
       openMyPage();
+    } else if (screen === "screen-phrase-home") {
+      openPhraseHome();
     } else if (screen === "screen-admin") {
       showScreen("screen-admin");
       switchAdminTab("students");
@@ -549,7 +554,7 @@
   }
 
   function emptyModuleState() {
-    return { tutorialDone: false, points: 0, dailyLog: {}, historyLog: [], lastActivityAt: "", lastTopicLabel: "" };
+    return { tutorialDone: false, points: 0, dailyLog: {}, historyLog: [], lastActivityAt: "", lastTopicLabel: "", phrase: emptyPhraseState() };
   }
 
   function normalizeModuleState(input) {
@@ -561,7 +566,8 @@
       lastActivityAt: input.lastActivityAt || "",
       lastTopicLabel: input.lastTopicLabel || "",
       essayCount: Number(input.essayCount || 0),
-      essayDraftCount: Number(input.essayDraftCount || 0)
+      essayDraftCount: Number(input.essayDraftCount || 0),
+      phrase: normalizePhraseState(input.phrase)
     };
   }
 
@@ -577,7 +583,8 @@
       dailyLog: moduleState.dailyLog,
       historyLog: moduleState.historyLog.slice(0, HISTORY_MAX),
       lastActivityAt: moduleState.lastActivityAt,
-      lastTopicLabel: moduleState.lastTopicLabel
+      lastTopicLabel: moduleState.lastTopicLabel,
+      phrase: moduleState.phrase
     };
   }
 
@@ -796,7 +803,8 @@
     const query = ($("#topic-search").value || "").trim().toLowerCase();
     const shown = TOPICS.filter((topic) => !query || `${topic.label} ${topic.en} ${topic.ja} ${topic.points.join(" ")}`.toLowerCase().includes(query));
     const showExample = EXAMPLE && (!query || "例題".includes(query) || `${EXAMPLE.topic.en} ${EXAMPLE.topic.ja}`.toLowerCase().includes(query));
-    $("#topic-list").innerHTML = (showExample ? exampleCardHtml() : "") + (shown.length ? shown.map((topic) => {
+    const showPhrase = !query || ["フレーズを覚える", "暗記", "phrase"].some((word) => word.includes(query));
+    $("#topic-list").innerHTML = (showPhrase ? phraseCardHtml() : "") + (showExample ? exampleCardHtml() : "") + (shown.length ? shown.map((topic) => {
       const mine = records.filter((record) => record.topicId === topic.id);
       const doneCount = mine.filter((record) => record.status === "done").length;
       const topicDraft = mine.find((record) => record.status !== "done");
@@ -1319,11 +1327,11 @@
 
       ${options && options.ownerName ? "" : `<section class="work-panel line-panel">
         <h2>わからない所は先生にLINEで質問</h2>
-        <p class="hint">なぜこの形になるのか分からない所（関係代名詞・受動態など）は、下をそのままコピーしてLINEで送ろう。最後の「質問」に聞きたいことを書いてね。</p>
+        <p class="hint">なぜこの形になるのか分からない所（関係代名詞・受動態など）は、先生にLINEで聞こう。「LINEで送る」を押すと下の文がコピーされて、ハピクルのLINEが開くので、貼りつけて送ってね。最後の「質問」に聞きたいことを書いてね。</p>
         <pre class="copy-block" id="copy-block">${escapeHtml(buildCopyText(record, options && options.ownerName))}</pre>
         <div class="button-row">
           <button class="btn btn-primary" data-copy>コピーする</button>
-          <a class="btn btn-secondary" data-line-share target="_blank" rel="noopener">LINEで送る</a>
+          <a class="btn btn-secondary" data-line-share href="${LINE_URL}" target="_blank" rel="noopener">LINEで送る</a>
         </div>
       </section>`}
 
@@ -1395,7 +1403,14 @@
       });
     }
     const share = document.querySelector("[data-line-share]");
-    if (share && $("#copy-block")) share.href = `https://line.me/R/share?text=${encodeURIComponent($("#copy-block").textContent)}`;
+    if (share) {
+      share.addEventListener("click", () => {
+        const text = $("#copy-block") ? $("#copy-block").textContent : copyText;
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(text).then(() => showToast("コピーしました。LINEで貼りつけて送ってね")).catch(() => {});
+        }
+      });
+    }
     const toggle = document.querySelector("[data-toggle-memorize]");
     if (toggle) {
       toggle.addEventListener("click", () => {
@@ -1536,7 +1551,7 @@
 
   // ===== 連続学習日数・カレンダー・グラフ・履歴（学習データと生徒詳細で共通） =====
   function activityCount(day) {
-    return (day?.ja || 0) + (day?.done || 0);
+    return (day?.ja || 0) + (day?.done || 0) + (day?.phrase || 0);
   }
 
   function calcStreak(log) {
@@ -1652,12 +1667,12 @@
     </div>`;
   }
 
-  const HISTORY_TYPES = { ja: "日本語の添削", done: "全文ができた" };
+  const HISTORY_TYPES = { ja: "日本語の添削", done: "全文ができた", phrase: "フレーズ" };
 
   function renderHistory(log, container, target) {
     const filter = historyFilter[target];
     const list = (log || []).filter((h) => filter === "all" || h.type === filter);
-    const chips = [["all", "すべて"], ["done", "全文ができた"], ["ja", "日本語の添削"]].map(([key, label]) =>
+    const chips = [["all", "すべて"], ["done", "全文ができた"], ["ja", "日本語の添削"], ["phrase", "フレーズ"]].map(([key, label]) =>
       `<button class="chip${filter === key ? " active" : ""}" data-history-filter="${key}" data-history-target="${target}">${label}</button>`).join("");
     let html = `<div class="history-head"><div class="filter-chips">${chips}</div></div>`;
     if (!list.length) {
@@ -1666,6 +1681,7 @@
       html += `<div class="history-list">${list.slice(0, 100).map((h) => {
         const d = new Date(h.at);
         const when = `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+        if (h.type === "phrase") return phraseHistoryItemHtml(h, when);
         return `<div class="history-item${h.type === "done" ? " h-pass" : ""}">
           <div class="h-top"><span class="h-when">${when}</span><span class="h-what">${escapeHtml(h.label || "")}</span></div>
           <div class="h-mid">${escapeHtml(h.topicEn || "")}</div>
@@ -1676,6 +1692,18 @@
     container.innerHTML = html;
     container.dataset.historyTarget = target;
     container._historyLog = log || [];
+  }
+
+  // フレーズの履歴1行（単語アプリの履歴と同じ書き方）
+  function phraseHistoryItemHtml(h, when) {
+    const mode = PHRASE_MODE_NAMES[h.mode] || "練習";
+    const result = h.mode === "flashcard" ? `わかった ${h.correct}/${h.answered}枚` : `${h.correct}/${h.mode === "normal" ? h.total : h.answered}`;
+    const status = { pass: "🏆 合格", seqFull: "満点（順番通り）", paused: "途中でやめた", done: h.mode === "normal" ? "本番終了" : "おわり" }[h.status] || "";
+    return `<div class="history-item${h.status === "pass" ? " h-pass" : ""}">
+      <div class="h-top"><span class="h-when">${when}</span><span class="h-what">${escapeHtml(h.label || "フレーズ")}</span></div>
+      <div class="h-mid">${escapeHtml(mode)}${h.mode === "normal" && h.round ? `・${h.round}周目` : ""}</div>
+      <div class="h-status">${escapeHtml(status)}（${escapeHtml(result)}）</div>
+    </div>`;
   }
 
   function setHistoryFilter(target, filter) {
@@ -2266,6 +2294,507 @@
     }
   }
 
+  // ===== フレーズを覚える（単語アプリの暗記の仕組みを写した） =====
+  // セクション（20個ずつ）→ モード選択（本番テスト・バツ練習・マグレ練習・フラッシュカード）→ 4択／カード。
+  // 決まりは単語アプリと同じ：本番は毎回そのセクションの全問を通しで解き、1回で全問正解すると合格（🏆）。
+  // 2周目以降は🔀ランダムで全問正解したときだけ合格に数える。練習は点数に入らず、正解すると「残りのバツ」から外れる。
+  // 記録はモジュールの書類（users/{uid}/modules/writing）の phrase に置く。
+  const PHRASE_SECTION_SIZE = 20;
+  const PHRASE_SECTIONS = (() => {
+    const list = [];
+    for (let i = 0; i < PHRASES.length; i += PHRASE_SECTION_SIZE) {
+      const items = PHRASES.slice(i, i + PHRASE_SECTION_SIZE);
+      list.push({ id: `p${list.length + 1}`, label: `セクション${list.length + 1}`, range: `No.${items[0].no}〜${items[items.length - 1].no}`, nos: items.map((p) => p.no) });
+    }
+    return list;
+  })();
+  const PHRASE_MODE_NAMES = { normal: "本番テスト", review: "⭐ バツ練習", lucky: "🔺 マグレ練習", "review-combined": "⭐🔺 バツ＋マグレ練習", flashcard: "🃏 フラッシュカード" };
+  const pq = { section: null, mode: "normal", order: "random", orderMode: "random", pool: [], all: [], current: null, answered: false, recorded: false, run: null, round: 1, sessionCorrect: 0, sessionWrong: 0, totalPool: 0, choices: [] };
+  const pfc = { section: null, mode: "all", pool: [], index: 0, total: 0, unknown: new Set(), tab: "en", counted: false, logged: false };
+  let phraseCompleteType = "quiz";
+
+  function emptyPhraseState() {
+    return { records: {}, sections: {}, fc: { sessions: 0, cards: 0, lastDate: "" } };
+  }
+  function normalizePhraseState(input) {
+    const p = input && typeof input === "object" ? input : {};
+    return {
+      records: p.records && typeof p.records === "object" ? p.records : {},
+      sections: p.sections && typeof p.sections === "object" ? p.sections : {},
+      fc: { sessions: 0, cards: 0, lastDate: "", ...(p.fc || {}) }
+    };
+  }
+  function phraseByNo(no) { return PHRASES.find((p) => p.no === Number(no)); }
+  function phraseSection(id) { return PHRASE_SECTIONS.find((s) => s.id === id); }
+  function phraseRec(no) {
+    const recs = moduleState.phrase.records;
+    if (!recs[no]) recs[no] = { correct: false, attempts: 0, wrongCount: 0, lucky: false };
+    return recs[no];
+  }
+  const pIsEverWrong = (r) => (r?.wrongCount || 0) > 0;
+  const pIsRemainWrong = (r) => pIsEverWrong(r) && !r.practiceOk;
+  const pIsRemainLucky = (r) => r?.lucky === true;
+
+  // セクション1つぶんの数字（単語アプリの sectionInfo と同じ考え方）
+  function phraseSectionInfo(sec, phraseState = moduleState.phrase) {
+    const st = phraseState.sections[sec.id] || {};
+    const info = { total: sec.nos.length, correct: 0, answered: 0, everWrong: 0, remainWrong: 0, remainLucky: 0 };
+    sec.nos.forEach((no) => {
+      const r = phraseState.records[no];
+      if (!r) return;
+      if (r.correct) info.correct += 1;
+      if ((r.attempts || 0) > 0) info.answered += 1;
+      if (pIsEverWrong(r)) info.everWrong += 1;
+      if (pIsRemainWrong(r)) info.remainWrong += 1;
+      if (pIsRemainLucky(r)) info.remainLucky += 1;
+    });
+    info.hasRun = st.lastScore != null;
+    info.score = info.hasRun ? st.lastScore : 0;
+    info.best = st.bestScore != null ? st.bestScore : null;
+    info.cleared = info.total > 0 && info.score === info.total;
+    info.passCount = st.passCount || 0;
+    info.passes = st.passes || [];
+    info.seqFull = st.seqFullCount || 0;
+    info.round = info.hasRun ? (st.lastRunRound || 1) : 1;
+    info.nextRound = info.passCount + 1;
+    return info;
+  }
+  function phraseCellClass(info) {
+    if (info.round >= 2) return info.cleared ? "cell-r2-full" : "cell-r2-part";
+    const pct = info.total ? (info.score / info.total) * 100 : 0;
+    return info.cleared ? "cell-perfect" : pct >= 80 ? "cell-good" : pct >= 50 ? "cell-mid" : pct > 0 ? "cell-low" : "cell-none";
+  }
+  function phrasePassBadge(info) {
+    let html = info.passCount > 0 ? `<span class="pass-badge" title="合格回数">🏆${info.passCount}</span>` : "";
+    if (info.round >= 2) html += `<span class="round-badge">${info.round}周目</span>`;
+    return html;
+  }
+  const phraseOrderName = (order) => (order === "sequential" ? "📋 順番通り" : "🔀 ランダム");
+  const phraseOrderIcon = (order) => (order === "sequential" ? "📋" : "🔀");
+
+  // 書くタブの「フレーズを覚える！」のカード（例題の前）
+  function phraseCardHtml() {
+    if (!PHRASES.length) return "";
+    const infos = PHRASE_SECTIONS.map((sec) => phraseSectionInfo(sec));
+    const cleared = infos.filter((info) => info.passCount > 0).length;
+    const wrong = infos.reduce((sum, info) => sum + info.remainWrong, 0);
+    return `
+      <article class="topic-card phrase-card">
+        <div class="topic-card-head">
+          <span class="phrase-badge">暗記</span>
+          ${cleared ? `<span class="badge badge-done">合格 ${cleared}/${PHRASE_SECTIONS.length}セクション</span>` : ""}
+          ${wrong ? `<span class="badge badge-draft">残りのバツ ${wrong}</span>` : ""}
+        </div>
+        <h3>フレーズを覚える！</h3>
+        <p class="topic-ja">田中先生のおすすめフレーズ${PHRASES.length}。単語アプリと同じ4択テストとフラッシュカードで覚えよう。</p>
+        <div class="topic-actions">
+          <button class="btn btn-primary btn-small" data-phrase-home>覚える</button>
+        </div>
+      </article>`;
+  }
+
+  function openPhraseHome() {
+    $("#phrase-section-grid").innerHTML = PHRASE_SECTIONS.map((sec) => {
+      const info = phraseSectionInfo(sec);
+      return `<div class="section-card${info.cleared ? " cleared" : ""}${info.round >= 2 ? " round2" : ""}" data-phrase-section="${sec.id}">
+        <div class="card-title">${sec.label}${info.cleared ? " ✅" : ""}</div>
+        <div class="card-range">${sec.range}</div>
+        <div class="card-progress"><span class="card-score ${phraseCellClass(info)}">${info.score}/${info.total} 点</span></div>
+        ${info.best != null && info.best > info.score ? `<div class="card-progress card-best">最高 ${info.best}点</div>` : ""}
+        ${info.passCount > 0 || info.round >= 2 ? `<div class="card-progress card-badges">${phrasePassBadge(info)}</div>` : ""}
+        ${info.remainWrong > 0 ? `<div class="card-progress" style="color:#E05555">残りのバツ ${info.remainWrong} 個</div><div class="card-badge">✗</div>` : ""}
+      </div>`;
+    }).join("");
+    showScreen("screen-phrase-home");
+  }
+
+  function phraseResumeKey() { return `hwa_phrase_resume_${currentUser ? currentUser.uid : "guest"}`; }
+  function getSavedPhraseQuiz() {
+    try { return JSON.parse(localStorage.getItem(phraseResumeKey())); } catch (error) { return null; }
+  }
+
+  function openPhraseMode(secId) {
+    const sec = phraseSection(secId);
+    if (!sec) return;
+    pq.section = sec;
+    const info = phraseSectionInfo(sec);
+    const recs = moduleState.phrase.records;
+    const wrongN = sec.nos.filter((no) => pIsRemainWrong(recs[no])).length;
+    const luckyN = sec.nos.filter((no) => pIsRemainLucky(recs[no])).length;
+    const combinedN = sec.nos.filter((no) => pIsRemainWrong(recs[no]) || pIsRemainLucky(recs[no])).length;
+    const fcReviewN = sec.nos.filter((no) => pIsRemainWrong(recs[no]) || recs[no]?.fcUnknown === true).length;
+    $("#phrase-mode-title").textContent = `${sec.label}（${sec.range}）`;
+    $("#phrase-mode-stats").innerHTML = `
+      <strong>本番の点数:</strong> <span class="${phraseCellClass(info)} mode-score">${info.score}/${info.total}</span>
+      ${info.best != null && info.best > info.score ? `<span class="mode-best">最高 ${info.best}</span>` : ""}
+      ${phrasePassBadge(info)}<br>
+      <strong>残りのバツ:</strong> ${wrongN} 個（これまで ${info.everWrong} 個）／
+      <strong>残りのマグレ:</strong> ${luckyN} 個<br>
+      <span class="mode-note">次の本番は${info.nextRound}周目。全${info.total}問を通しで解き、1回で全問正解すると合格${info.nextRound >= 2 ? "（2周目以降はランダムでクリアしたときだけ合格に数えます）" : ""}</span>`;
+    $("#btn-phrase-normal").textContent = `▶ 本番テスト（全${info.total}問を通しで）`;
+    [["#btn-phrase-review", wrongN], ["#btn-phrase-lucky", luckyN], ["#btn-phrase-combined", combinedN], ["#btn-phrase-fc-review", fcReviewN]].forEach(([sel, n]) => {
+      $(sel).disabled = n === 0;
+    });
+    const saved = getSavedPhraseQuiz();
+    const resume = $("#btn-phrase-resume");
+    if (saved && saved.sectionId === sec.id) {
+      resume.classList.remove("hidden");
+      resume.textContent = saved.mode === "normal"
+        ? `⏸ 本番の続きから（あと${saved.poolNos.length}問・${phraseOrderName(saved.order)}）`
+        : `⏸ 練習の続きから（${PHRASE_MODE_NAMES[saved.mode] || "練習"}・あと${saved.poolNos.length}問）`;
+    } else {
+      resume.classList.add("hidden");
+    }
+    updatePhraseOrderWarn();
+    showScreen("screen-phrase-mode");
+  }
+
+  function setPhraseOrder(order) {
+    pq.orderMode = order;
+    $$("[data-phrase-order]").forEach((button) => button.classList.toggle("active", button.dataset.phraseOrder === order));
+    updatePhraseOrderWarn();
+  }
+  function updatePhraseOrderWarn() {
+    const show = pq.section && pq.orderMode === "sequential" && phraseSectionInfo(pq.section).nextRound >= 2;
+    $("#phrase-order-warn").classList.toggle("hidden", !show);
+  }
+
+  function shufflePhrases(list) {
+    const a = [...list];
+    for (let i = a.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+  function applyPhraseOrder(list, order) {
+    return order === "sequential" ? [...list].sort((a, b) => a.no - b.no) : shufflePhrases(list);
+  }
+
+  function startPhraseQuiz(mode) {
+    const sec = pq.section;
+    const all = sec.nos.map(phraseByNo);
+    const recs = moduleState.phrase.records;
+    const saved = getSavedPhraseQuiz();
+    const savedHere = saved && saved.sectionId === sec.id;
+    if (mode === "normal") {
+      if (savedHere && saved.mode === "normal" &&
+        !window.confirm(`途中の本番があります（あと${saved.poolNos.length}問）。\n最初からやり直すと、途中の回は「途中でやめた回」として履歴に残り、点数は付きません。\n最初からやり直しますか？`)) return;
+      if (pq.orderMode === "sequential" && phraseSectionInfo(sec).nextRound >= 2 &&
+        !window.confirm("2周目以降の合格扱いになるには、ランダムでクリアする必要があります。順番通りで解いた分は、合格回数（🏆）に数えません。\n順番通りで始めますか？")) return;
+    }
+    localStorage.removeItem(phraseResumeKey());
+    Object.assign(pq, { mode, order: pq.orderMode, sessionCorrect: 0, sessionWrong: 0, answered: false, all, run: null });
+    if (mode === "review") pq.pool = applyPhraseOrder(all.filter((p) => pIsRemainWrong(recs[p.no])), pq.order);
+    else if (mode === "lucky") pq.pool = applyPhraseOrder(all.filter((p) => pIsRemainLucky(recs[p.no])), pq.order);
+    else if (mode === "review-combined") pq.pool = applyPhraseOrder(all.filter((p) => pIsRemainWrong(recs[p.no]) || pIsRemainLucky(recs[p.no])), pq.order);
+    else {
+      pq.pool = applyPhraseOrder(all, pq.order);
+      pq.round = phraseSectionInfo(sec).nextRound;
+      pq.run = { id: Date.now(), resumed: 0, correct: [], wrong: [] };
+    }
+    if (!pq.pool.length) { showToast("出題できるフレーズがありません"); return; }
+    pq.totalPool = pq.pool.length;
+    showScreen("screen-phrase-quiz");
+    setPhraseQuizLabel();
+    nextPhraseQuestion();
+  }
+
+  function setPhraseQuizLabel() {
+    $("#phrase-quiz-section").textContent = `${pq.section.label}（${pq.section.range}）`;
+    $("#phrase-quiz-mode").innerHTML = pq.mode === "normal"
+      ? `本番テスト ${pq.round}周目 ${phraseOrderIcon(pq.order)}${pq.order === "sequential" && pq.round >= 2 ? '<span class="quiz-warn">順番通り（合格に数えません）</span>' : ""}`
+      : `${escapeHtml(PHRASE_MODE_NAMES[pq.mode] || "練習")}（点数に入りません） ${phraseOrderIcon(pq.order)}`;
+  }
+
+  function nextPhraseQuestion() {
+    if (!pq.pool.length) { showPhraseComplete(); return; }
+    pq.current = pq.pool.shift();
+    pq.answered = false;
+    pq.recorded = false;
+    const isNormal = pq.mode === "normal" && pq.run;
+    const total = isNormal ? pq.all.length : pq.totalPool;
+    const done = isNormal ? pq.run.correct.length + pq.run.wrong.length : pq.sessionCorrect + pq.sessionWrong;
+    $("#phrase-progress-bar").style.width = `${total ? Math.round((done / total) * 100) : 0}%`;
+    $("#phrase-progress-text").textContent = isNormal ? `${done} / ${total}　点数 ${total - pq.run.wrong.length}/${total}` : `${done} / ${total}`;
+    $("#phrase-display").textContent = pq.current.en;
+    $("#phrase-no").textContent = `No.${pq.current.no}`;
+    const others = shufflePhrases(pq.all.filter((p) => p.no !== pq.current.no && p.ja !== pq.current.ja));
+    const extra = shufflePhrases(PHRASES.filter((p) => !pq.section.nos.includes(p.no) && p.ja !== pq.current.ja));
+    pq.choices = shufflePhrases([pq.current.ja, ...[...others, ...extra].slice(0, 3).map((p) => p.ja)]);
+    $("#phrase-choices").innerHTML = pq.choices.map((choice, i) => `<button class="choice-btn" data-phrase-choice="${i}">${escapeHtml(choice)}</button>`).join("");
+    const result = $("#phrase-result");
+    result.className = "quiz-result hidden";
+    result.innerHTML = "";
+    $("#phrase-next").innerHTML = "";
+    $("#phrase-next").classList.add("hidden");
+  }
+
+  function onPhraseAnswer(index) {
+    if (pq.answered) return;
+    pq.answered = true;
+    const chosen = pq.choices[index];
+    const correct = pq.current.ja;
+    const isCorrect = chosen === correct;
+    $$("#phrase-choices .choice-btn").forEach((button, i) => {
+      button.disabled = true;
+      if (pq.choices[i] === correct) button.classList.add("correct");
+      else if (i === index && !isCorrect) button.classList.add("wrong");
+    });
+    const result = $("#phrase-result");
+    result.className = `quiz-result ${isCorrect ? "correct-msg" : "wrong-msg"}`;
+    result.innerHTML = isCorrect
+      ? `⭕ 正解！<div class="result-word-info">${escapeHtml(pq.current.en)} = ${escapeHtml(correct)}</div>`
+      : `✗ 不正解 — 正解：<strong>${escapeHtml(correct)}</strong><div class="result-word-info">${escapeHtml(pq.current.en)}</div>`;
+    const next = $("#phrase-next");
+    next.classList.remove("hidden");
+    if (isCorrect) {
+      pq.sessionCorrect += 1;
+      next.innerHTML = `<div class="quiz-next-correct">
+        <button class="btn btn-primary quiz-next-btn" data-phrase-confirm="sure">⭕ 確信して正解</button>
+        <button class="btn btn-lucky quiz-next-btn" data-phrase-confirm="lucky">🔺 マグレの正解</button></div>`;
+    } else {
+      const r = phraseRec(pq.current.no);
+      r.attempts += 1;
+      r.wrongCount = (r.wrongCount || 0) + 1;
+      r.practiceOk = false;
+      r.lucky = false;
+      if (pq.mode === "normal" && pq.run) pq.run.wrong.push(pq.current.no);
+      pq.sessionWrong += 1;
+      pq.recorded = true;
+      bumpPhraseDaily();
+      persistModule().catch((error) => console.warn("phrase not saved", error));
+      next.innerHTML = `<button class="btn btn-secondary quiz-next-btn" data-phrase-next>次へ →</button>`;
+    }
+  }
+
+  function confirmPhraseAnswer(isLucky) {
+    const r = phraseRec(pq.current.no);
+    r.attempts += 1;
+    r.lucky = isLucky;
+    if (isLucky) r.luckyCount = (r.luckyCount || 0) + 1;
+    if (pq.mode === "normal" && pq.run) pq.run.correct.push(pq.current.no);
+    else r.practiceOk = true;
+    pq.recorded = true;
+    bumpPhraseDaily();
+    persistModule().catch((error) => console.warn("phrase not saved", error));
+    nextPhraseQuestion();
+  }
+
+  // 1日ごとの記録：フレーズを解いた数・カードをめくった数
+  function bumpPhraseDaily() {
+    const day = dateKey(new Date());
+    const entry = moduleState.dailyLog[day] || { ja: 0, done: 0, words: 0 };
+    entry.phrase = (entry.phrase || 0) + 1;
+    moduleState.dailyLog[day] = entry;
+    moduleState.lastActivityAt = new Date().toISOString();
+  }
+  function pushPhraseHistory(detail) {
+    moduleState.historyLog.unshift({ at: new Date().toISOString(), type: "phrase", label: `フレーズ ${pq.section ? pq.section.label : ""}`, ...detail });
+    moduleState.historyLog = moduleState.historyLog.slice(0, HISTORY_MAX);
+  }
+
+  function savePhraseQuizAndBack() {
+    const remaining = pq.current && !pq.recorded ? [pq.current, ...pq.pool] : pq.pool;
+    if (remaining.length) {
+      localStorage.setItem(phraseResumeKey(), JSON.stringify({
+        sectionId: pq.section.id, mode: pq.mode, order: pq.order, round: pq.round, run: pq.run,
+        poolNos: remaining.map((p) => p.no), totalPool: pq.totalPool, sessionCorrect: pq.sessionCorrect, sessionWrong: pq.sessionWrong
+      }));
+    }
+    const answered = pq.mode === "normal" && pq.run ? pq.run.correct.length + pq.run.wrong.length : pq.sessionCorrect + pq.sessionWrong;
+    if (answered > 0) {
+      pushPhraseHistory({ mode: pq.mode, status: "paused", answered, correct: pq.mode === "normal" && pq.run ? pq.run.correct.length : pq.sessionCorrect, total: pq.mode === "normal" ? pq.all.length : pq.totalPool });
+      persistModule().catch(() => {});
+    }
+    openPhraseMode(pq.section.id);
+  }
+
+  function resumePhraseQuiz() {
+    const saved = getSavedPhraseQuiz();
+    if (!saved) return;
+    const sec = phraseSection(saved.sectionId);
+    localStorage.removeItem(phraseResumeKey());
+    if (!sec) return;
+    Object.assign(pq, {
+      section: sec, mode: saved.mode, order: saved.order || "random", round: saved.round || 1, run: saved.run || null,
+      sessionCorrect: saved.sessionCorrect || 0, sessionWrong: saved.sessionWrong || 0, answered: false,
+      all: sec.nos.map(phraseByNo), pool: saved.poolNos.map(phraseByNo).filter(Boolean)
+    });
+    if (pq.run) pq.run.resumed = (pq.run.resumed || 0) + 1;
+    pq.totalPool = saved.totalPool || pq.pool.length;
+    if (!pq.pool.length) { openPhraseMode(sec.id); return; }
+    showScreen("screen-phrase-quiz");
+    setPhraseQuizLabel();
+    nextPhraseQuestion();
+  }
+
+  function showPhraseComplete() {
+    phraseCompleteType = "quiz";
+    localStorage.removeItem(phraseResumeKey());
+    let title = "練習おわり！";
+    let body = "";
+    if (pq.mode === "normal" && pq.run) {
+      const total = pq.all.length;
+      const ok = new Set(pq.run.correct);
+      pq.all.forEach((p) => { phraseRec(p.no).correct = ok.has(p.no); });
+      const score = pq.run.correct.length;
+      const st = moduleState.phrase.sections[pq.section.id] || (moduleState.phrase.sections[pq.section.id] = {});
+      st.lastScore = score;
+      st.bestScore = Math.max(st.bestScore || 0, score);
+      st.lastRunRound = pq.round;
+      st.lastRunAt = new Date().toISOString();
+      st.runs = (st.runs || 0) + 1;
+      let status = "done";
+      let passLine;
+      if (score === total && (pq.round === 1 || pq.order === "random")) {
+        st.passCount = (st.passCount || 0) + 1;
+        st.passes = [...(st.passes || []), { date: dateKey(new Date()), round: pq.round, order: pq.order, score, resumed: pq.run.resumed || 0 }];
+        status = "pass";
+        title = "🎉 合格！";
+        passLine = `<strong style="color:#FF6B9D">🏆 ${st.passCount}回目の合格！（${phraseOrderName(pq.order)}）</strong>`;
+      } else if (score === total) {
+        st.seqFullCount = (st.seqFullCount || 0) + 1;
+        status = "seqFull";
+        title = "満点！";
+        passLine = `<span class="complete-warn">⚠️ 2周目以降の合格扱いになるには、ランダムでクリアする必要があります。<br>今回の満点は記録に残りますが、合格回数は増えません。</span>`;
+      } else {
+        title = "本番テスト終了";
+        passLine = `<span class="mode-note">あと${total - score}問で満点。1回のテストで全問正解すると合格です。<br>間違えたフレーズは「バツ練習」で練習しましょう。</span>`;
+      }
+      pushPhraseHistory({ mode: "normal", status, round: pq.round, order: pq.order, answered: total, correct: score, total });
+      body = `<strong>今回の点数:</strong> ${score}/${total}（${pq.round}周目・${phraseOrderName(pq.order)}）<br>
+        ${st.bestScore > score ? `<strong>最高:</strong> ${st.bestScore}/${total}<br>` : ""}${passLine}`;
+    } else {
+      const answered = pq.sessionCorrect + pq.sessionWrong;
+      const pct = answered ? Math.round((pq.sessionCorrect / answered) * 100) : 0;
+      pushPhraseHistory({ mode: pq.mode, status: "done", answered, correct: pq.sessionCorrect, total: pq.totalPool });
+      const info = phraseSectionInfo(pq.section);
+      body = `<strong>今回の正答率:</strong> ${pq.sessionCorrect}/${answered}（${pct}%）<br>
+        <strong>本番の点数:</strong> ${info.score}/${info.total}（練習では変わりません）<br>
+        <span class="mode-note">練習の結果は、本番の点数と合格には入りません。正解したフレーズは「残りのバツ」から外れます。</span>`;
+    }
+    persistModule().catch((error) => console.warn("phrase not saved", error));
+    $("#phrase-complete-title").textContent = title;
+    $("#phrase-complete-stats").innerHTML = body;
+    $("#btn-phrase-retry").textContent = pq.mode === "normal" ? "もう一度（最初から通しで）" : "もう一度";
+    $("#btn-phrase-retry-unknown").classList.add("hidden");
+    showScreen("screen-phrase-complete");
+  }
+
+  // フラッシュカード
+  function startPhraseFlashcard(mode) {
+    const sec = pq.section;
+    const recs = moduleState.phrase.records;
+    const all = sec.nos.map(phraseByNo);
+    const raw = mode === "review" ? all.filter((p) => pIsRemainWrong(recs[p.no]) || recs[p.no]?.fcUnknown === true) : all;
+    Object.assign(pfc, { section: sec, mode, pool: applyPhraseOrder(raw, pq.orderMode), index: 0, unknown: new Set(), counted: false, logged: false });
+    if (!pfc.pool.length) { showToast("出題できるフレーズがありません"); return; }
+    pfc.total = pfc.pool.length;
+    $("#phrase-fc-section").textContent = `${sec.label}（${sec.range}）`;
+    showScreen("screen-phrase-fc");
+    renderPhraseCard();
+  }
+  function renderPhraseCard() {
+    if (pfc.index >= pfc.pool.length) { showPhraseFcComplete(); return; }
+    pfc.current = pfc.pool[pfc.index];
+    $("#phrase-fc-progress").style.width = `${Math.round((pfc.index / pfc.total) * 100)}%`;
+    $("#phrase-fc-counter").textContent = `${pfc.index + 1} / ${pfc.total}`;
+    $("#phrase-fc-no").textContent = `No.${pfc.current.no}`;
+    renderPhraseCardContent();
+  }
+  function renderPhraseCardContent() {
+    $$("[data-phrase-tab]").forEach((tab) => tab.classList.toggle("active", tab.dataset.phraseTab === pfc.tab));
+    const main = $("#phrase-fc-main");
+    main.className = pfc.tab === "en" ? "fc-word-en" : "fc-word-ja";
+    main.textContent = pfc.tab === "en" ? pfc.current.en : pfc.current.ja;
+  }
+  function markPhraseCard(known) {
+    if (!known) pfc.unknown.add(pfc.current.no);
+    phraseRec(pfc.current.no).fcUnknown = !known;
+    const fc = moduleState.phrase.fc;
+    if (!pfc.counted) { pfc.counted = true; fc.sessions = (fc.sessions || 0) + 1; }
+    fc.cards = (fc.cards || 0) + 1;
+    fc.lastDate = dateKey(new Date());
+    bumpPhraseDaily();
+    persistModule().catch((error) => console.warn("phrase not saved", error));
+    pfc.index += 1;
+    renderPhraseCard();
+  }
+  function logPhraseFlashcard(status) {
+    if (!pfc.section || pfc.index === 0 || pfc.logged) return;
+    pfc.logged = true;
+    pq.section = pfc.section;
+    pushPhraseHistory({ mode: "flashcard", status, answered: pfc.index, correct: pfc.index - pfc.unknown.size, total: pfc.total });
+    persistModule().catch(() => {});
+  }
+  function showPhraseFcComplete() {
+    phraseCompleteType = "flashcard";
+    logPhraseFlashcard("done");
+    const unknown = pfc.unknown.size;
+    $("#phrase-complete-title").textContent = "🃏 フラッシュカード完了！";
+    $("#phrase-complete-stats").innerHTML = `<strong>わかった:</strong> ${pfc.total - unknown} 個<br><strong>わからない:</strong> ${unknown} 個<br><strong>合計:</strong> ${pfc.total} 個`;
+    $("#btn-phrase-retry").textContent = "もう一度（全部）";
+    const retryUnknown = $("#btn-phrase-retry-unknown");
+    retryUnknown.textContent = `⭐ わからない ${unknown} 個をもう一度`;
+    retryUnknown.classList.toggle("hidden", unknown === 0);
+    showScreen("screen-phrase-complete");
+  }
+  function retryPhraseUnknown() {
+    const list = pfc.pool.filter((p) => pfc.unknown.has(p.no));
+    if (!list.length) return;
+    Object.assign(pfc, { pool: applyPhraseOrder(list, pq.orderMode), index: 0, unknown: new Set(), counted: false, logged: false });
+    pfc.total = pfc.pool.length;
+    showScreen("screen-phrase-fc");
+    renderPhraseCard();
+  }
+
+  // 発音（端末の読み上げ。〜や・・・は読まない）
+  function speakPhrase(text) {
+    if (!("speechSynthesis" in window)) return;
+    const clean = String(text || "").replace(/[～~〜・…]+/g, " ").replace(/人/g, "someone").replace(/\s+/g, " ").trim();
+    window.speechSynthesis.cancel();
+    const utter = new SpeechSynthesisUtterance(clean);
+    utter.lang = "en-US";
+    utter.rate = 0.9;
+    window.speechSynthesis.speak(utter);
+  }
+
+  // フレーズの画面のボタン（まとめて受ける）
+  function handlePhraseClick(target) {
+    if (target.closest("[data-phrase-home]")) { openPhraseHome(); return true; }
+    const sec = target.closest("[data-phrase-section]");
+    if (sec) { openPhraseMode(sec.dataset.phraseSection); return true; }
+    const order = target.closest("[data-phrase-order]");
+    if (order) { setPhraseOrder(order.dataset.phraseOrder); return true; }
+    const start = target.closest("[data-phrase-start]");
+    if (start && !start.disabled) { startPhraseQuiz(start.dataset.phraseStart); return true; }
+    const fcStart = target.closest("[data-phrase-fc]");
+    if (fcStart && !fcStart.disabled) { startPhraseFlashcard(fcStart.dataset.phraseFc); return true; }
+    if (target.closest("[data-phrase-resume]")) { resumePhraseQuiz(); return true; }
+    const choice = target.closest("[data-phrase-choice]");
+    if (choice) { onPhraseAnswer(Number(choice.dataset.phraseChoice)); return true; }
+    const confirmButton = target.closest("[data-phrase-confirm]");
+    if (confirmButton) { confirmPhraseAnswer(confirmButton.dataset.phraseConfirm === "lucky"); return true; }
+    if (target.closest("[data-phrase-next]")) { nextPhraseQuestion(); return true; }
+    if (target.closest("[data-phrase-quiz-back]")) { savePhraseQuizAndBack(); return true; }
+    if (target.closest("[data-phrase-fc-back]")) { logPhraseFlashcard("paused"); openPhraseMode(pfc.section.id); return true; }
+    if (target.closest("[data-phrase-speak]")) { speakPhrase(pq.current?.en); return true; }
+    if (target.closest("[data-phrase-fc-speak]")) { speakPhrase(pfc.current?.en); return true; }
+    const tab = target.closest("[data-phrase-tab]");
+    if (tab) { pfc.tab = tab.dataset.phraseTab; renderPhraseCardContent(); return true; }
+    const mark = target.closest("[data-phrase-mark]");
+    if (mark) { markPhraseCard(mark.dataset.phraseMark === "known"); return true; }
+    if (target.closest("#btn-phrase-retry")) {
+      if (phraseCompleteType === "flashcard") startPhraseFlashcard(pfc.mode);
+      else startPhraseQuiz(pq.mode);
+      return true;
+    }
+    if (target.closest("#btn-phrase-retry-unknown")) { retryPhraseUnknown(); return true; }
+    if (target.closest("[data-phrase-to-sections]")) { openPhraseHome(); return true; }
+    return false;
+  }
+
   // ===== 使い方・フレーズ =====
   function renderTutorial() {
     const steps = [
@@ -2276,7 +2805,8 @@
       ["全文が出る", "1段落目と4段落目はアプリが型どおりに作ります。全文は「学習データ」のノートにたまるので、覚えて授業へ。分からない所はコピーして先生にLINEで質問しよう。"]
     ];
     $("#tutorial-body").innerHTML = steps.map(([title, text], i) => `
-      <div class="tutorial-step"><span class="tutorial-no">${i + 1}</span><div><h3>${title}</h3><p>${text}</p></div></div>`).join("");
+      <div class="tutorial-step"><span class="tutorial-no">${i + 1}</span><div><h3>${title}</h3><p>${text}</p></div></div>`).join("") +
+      `<p class="tutorial-extra">書くタブのいちばん上の「フレーズを覚える！」で、おすすめフレーズ77を単語アプリと同じ4択テストとフラッシュカードで覚えられます。</p>`;
   }
 
   function renderPhraseList(query) {
@@ -2308,7 +2838,9 @@
     const tabFor = {
       "screen-home": "screen-home", "screen-write": "screen-home",
       "screen-stats": "screen-stats", "screen-record": recordBack === "detail" ? "screen-admin" : "screen-stats",
-      "screen-mypage": "screen-mypage", "screen-admin": "screen-admin"
+      "screen-mypage": "screen-mypage", "screen-admin": "screen-admin",
+      "screen-phrase-home": "screen-home", "screen-phrase-mode": "screen-home", "screen-phrase-quiz": "screen-home",
+      "screen-phrase-fc": "screen-home", "screen-phrase-complete": "screen-home"
     }[id];
     $$(".tab-btn").forEach((button) => button.classList.toggle("active", button.dataset.tabScreen === tabFor));
     if (id !== "screen-record" && id !== "screen-write") document.body.classList.remove("memorize-mode");

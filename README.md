@@ -7,6 +7,8 @@
 3. 生徒が6文を英語にする
 4. AIが英文を添削し、1段落目と4段落目を型どおりに作って全文（4段落）を出す。全文は学習データのノートにたまり、LINEで先生に質問できる形でコピーできる
 
+書くタブのいちばん上の「フレーズを覚える！」で、おすすめフレーズ77を単語アプリと同じ4択テストとフラッシュカードで覚えられる。
+
 要約（大問4）のタブは準備中。
 
 ## 構成
@@ -17,7 +19,7 @@
 | `data.js` | トピック（過去問）・おすすめフレーズ77・田中先生の回答例・英検の採点観点 |
 | `firebase-config.js` | ハピクル共通のFirebaseプロジェクト（単語アプリと同じ） |
 | `ai-config.js` | AI添削の中継サーバーのURL（APIキーは置かない） |
-| `worker/` | AI添削の中継サーバー（Cloudflare Worker）。Claude APIを呼ぶ |
+| `worker/` | AI添削の中継サーバー（Cloudflare Worker）。今は Cloudflare の無料のAI（Gemma 4）を呼ぶ。`wrangler.toml` の `PROVIDER` で Claude API に替えられる |
 | `firestore.rules` | Firestoreのルール（学習データ `users/{uid}/...` の読み書き） |
 | `tools/smoke-test.mjs` | ヘッドレスChromeでデモモードを通しで確かめる |
 | `tools/try-prompts.mjs` | AIの指示文を手元で試す |

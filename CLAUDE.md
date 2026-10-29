@@ -13,6 +13,7 @@
 - 指示文の本体は `worker/src/prompts.js`。変えるときは議事録の「決まったこと」と照らす
 - ハピクル共通仕様 v1：バニラJS／Firebase共通プロジェクト／`idToEmail()` は単語アプリと1文字も変えない／学習データは `users/{uid}/modules/writing/...`
 - APIキーはアプリに置かない。Workerの秘密の設定（`wrangler secret put ANTHROPIC_API_KEY`）だけ
+- AIは `worker/wrangler.toml` の `PROVIDER` で選ぶ。今は `workers-ai`（Cloudflareの無料枠・Gemma 4・キー不要。`worker/src/workersai.js`）。`anthropic` にすると Claude API。無料のAIは、考える時間を省く・JSONの形は指示文で守らせる（json_schema でしばると答案によって時間切れ）・日本語の添削は見直しをもう1回（`buildJaCheckPrompt`）。点数・合格の話は `stripScoreTalk` で取り除く。決めた経緯＝`../ローカルAIテスト/AI比較_Codex_Cloudflare無料AI_2026-10-29.md`
 
 ## 主な関数（app.js）
 
@@ -22,6 +23,8 @@
 - 学習データ・マイページ・管理画面は単語アプリ（`~/hapikuru-english-app`）の構造とクラス名を写している（`openStats`／`openMyPage`／`switchAdminTab`・`openUserDetail`）。単語アプリと共通の項目（名前・ID・パスワード・role・archived）は users/{uid} の書類にあり、ここで変えると単語アプリにも反映される
 - 1日ごとの回数・履歴・ポイントはモジュールの書類（`users/{uid}/modules/writing` の `dailyLog`・`historyLog`・`points`）。`logActivity("ja"|"done")` で増える
 - `persistRecord`：記録の保存と、モジュールの題数の更新
+- フレーズを覚える（`openPhraseHome`〜`handlePhraseClick`）：単語アプリ（`~/hapikuru-english-app` の `openMode`・`startQuiz`・`onAnswer`・`confirmAnswer`・`showComplete`・`startFlashcard`）の仕組みとクラス名を写した。セクションは20個ずつ。記録は `moduleState.phrase`（records・sections・fc）。見た目は `style.css` の `.phrase-screen` の中だけに効かせている
+- 先生に質問するLINEは `LINE_URL`（https://lin.ee/q1RMWbS）。文面は渡せないので、押したときに質問用の文をコピーしてから開く
 - デモモード（`localMode`）は `mockJaReview` / `mockEnReview` で仮の結果を返す
 
 ## チュートリアル動画
