@@ -17,6 +17,8 @@
   const EXAMPLE = window.WRITING_EXAMPLE || null;
   const VIDEOS = window.WRITING_VIDEOS || {};
   const AI_URL = String(window.WRITING_AI_URL || "").replace(/\/$/, "");
+  // 試験用：?ai=local で開いたときは、同じ窓口（この PC の Codex。ローカルAIテスト/server.mjs）に添削させる
+  const LOCAL_AI = new URLSearchParams(window.location.search).get("ai") === "local";
 
   const SENTENCE_ROLES = [
     "1文目：理由（言いたいこと）",
@@ -423,7 +425,8 @@
 
   function afterLogin() {
     $("#home-user-name").textContent = currentProfile?.name || "";
-    $("#demo-badge").classList.toggle("hidden", !localMode);
+    $("#demo-badge").classList.toggle("hidden", !localMode && !LOCAL_AI);
+    if (LOCAL_AI) $("#demo-badge").textContent = "試験：Codex";
     $("#tab-admin").classList.toggle("hidden", !isStaff());
     $("#admin-teacher-name").textContent = `講師: ${currentProfile?.name || ""}`;
     // 講師は管理画面から始まる（単語アプリと同じ）。デモは生徒の画面から
@@ -1176,6 +1179,17 @@
 
   // ===== AI（中継サーバー経由。デモはその場で仮の結果を作る） =====
   async function callAI(path, body) {
+    if (LOCAL_AI) {
+      let response;
+      try {
+        response = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      } catch (error) {
+        throw new Error("試験用の窓口（この PC の Codex）につながりませんでした。窓口が動いているか確かめてください。");
+      }
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.message || `Codexの添削に失敗しました（${response.status}）`);
+      return data.result;
+    }
     if (localMode) {
       await new Promise((resolve) => window.setTimeout(resolve, 900));
       return path === "/api/review-ja" ? mockJaReview(body) : mockEnReview(body);
