@@ -443,7 +443,7 @@ window.WRITING_TOPICS = [
       "生徒への圧力",
       "指導の質"
     ],
-    "check": "学習サイト3件で一致・田中先生の資料と一致",
+    "check": "学習サイト3件で一致・ハピクルの資料と一致",
     "source": "https://eikenpre1writing.ti-da.net/e12429772.html",
     "hasModelAnswer": true
   },

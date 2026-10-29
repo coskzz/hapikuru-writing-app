@@ -2216,7 +2216,7 @@
   function manualHtml() {
     return `<div class="manual">
       <h3>このアプリでできること</h3>
-      <p>生徒は、英検準1級の英作文（大問5）を「理由を日本語で6文 → AIが日本語を整える → 英語にする → 全文が出る」の順で書きます。1段落目と4段落目はAIが田中先生の型どおりに作ります。書き上げた全文は生徒の「学習データ」のノートにたまります。</p>
+      <p>生徒は、英検準1級の英作文（大問5）を「理由を日本語で6文 → AIが日本語を整える → 英語にする → 全文が出る」の順で書きます。1段落目と4段落目はAIがハピクルの型どおりに作ります。書き上げた全文は生徒の「学習データ」のノートにたまります。</p>
       <h3>生徒一覧の見方</h3>
       <ul>
         <li><b>✍️ 完了</b>：全文まで書き上げた題数　<b>書きかけ</b>：途中で止まっている題数</li>
@@ -2386,7 +2386,7 @@
           ${wrong ? `<span class="badge badge-draft">残りのバツ ${wrong}</span>` : ""}
         </div>
         <h3>フレーズを覚える！</h3>
-        <p class="topic-ja">田中先生のおすすめフレーズ${PHRASES.length}。単語アプリと同じ4択テストとフラッシュカードで覚えよう。</p>
+        <p class="topic-ja">ハピクルのおすすめフレーズ${PHRASES.length}。単語アプリと同じ4択テストとフラッシュカードで覚えよう。</p>
         <div class="topic-actions">
           <button class="btn btn-primary btn-small" data-phrase-home>覚える</button>
         </div>
