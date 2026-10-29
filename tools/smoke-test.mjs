@@ -81,7 +81,7 @@ try {
   check(true, "ログイン画面が出る");
   await evaluate(`document.querySelector('[data-open-video="intro"]').click(); true`);
   await waitFor(`(() => { const v = document.querySelector('#video-player'); return !document.querySelector('#video-modal').classList.contains('hidden') && v.readyState >= 1 && v.duration > 30; })()`, "ログイン前の使い方の動画", 20000);
-  check(await evaluate(`document.querySelector('#video-player').src.endsWith('videos/tutorial_app.mp4') && document.querySelector('#video-modal .modal-title').textContent.includes('ログインの仕方')`), "ログイン前に「アプリの使い方・ログインの仕方」の動画が見られる");
+  check(await evaluate(`document.querySelector('#video-player').src.includes('videos/tutorial_app.mp4') && document.querySelector('#video-modal .modal-title').textContent.includes('ログインの仕方')`), "ログイン前に「アプリの使い方・ログインの仕方」の動画が見られる");
   await shot("01b_login_video");
   await evaluate(`document.querySelector('[data-close-modal="video-modal"]').click(); true`);
 
@@ -89,7 +89,7 @@ try {
   await waitFor(`document.querySelector('#screen-home.active') && document.querySelectorAll('.topic-card').length > 0`, "トピック一覧");
   check(await evaluate(`!document.querySelector('#tutorial-modal').classList.contains('hidden')`), "初回は使い方が開く");
   await waitFor(`(() => { const v = document.querySelector('#tutorial-video'); return v.readyState >= 1 && v.duration > 30; })()`, "使い方の動画の読み込み", 20000);
-  check(await evaluate(`document.querySelector('#tutorial-video').src.endsWith('videos/tutorial_app.mp4')`), `使い方の画面に動画1が入っている（長さ ${await evaluate(`Math.round(document.querySelector('#tutorial-video').duration)`)}秒）`);
+  check(await evaluate(`document.querySelector('#tutorial-video').src.includes('videos/tutorial_app.mp4')`), `使い方の画面に動画1が入っている（長さ ${await evaluate(`Math.round(document.querySelector('#tutorial-video').duration)`)}秒）`);
   await shot("02_tutorial");
   await evaluate(`document.querySelector('#btn-finish-tutorial').click(); true`);
   await evaluate(`window.confirm = () => true; window.alert = () => {}; true`);
@@ -183,7 +183,7 @@ try {
   await evaluate(`(() => { const box = document.querySelector('#topic-search'); box.value = ''; box.dispatchEvent(new Event('input', { bubbles: true })); return true; })()`);
   await evaluate(`document.querySelector('[data-example-video]').click(); true`);
   await waitFor(`(() => { const v = document.querySelector('#video-player'); return !document.querySelector('#video-modal').classList.contains('hidden') && v.readyState >= 1 && v.duration > 30; })()`, "例題の動画", 20000);
-  check(await evaluate(`document.querySelector('#video-player').src.endsWith('videos/tutorial_example.mp4')`), `例題の「▶ 解き方の動画」で動画2が開く（長さ ${await evaluate(`Math.round(document.querySelector('#video-player').duration)`)}秒）`);
+  check(await evaluate(`document.querySelector('#video-player').src.includes('videos/tutorial_example.mp4')`), `例題の「▶ 解き方の動画」で動画2が開く（長さ ${await evaluate(`Math.round(document.querySelector('#video-player').duration)`)}秒）`);
   await evaluate(`document.querySelector('[data-close-modal="video-modal"]').click(); true`);
   check(await evaluate(`document.querySelector('#video-player').paused`), "動画を閉じると止まる");
   await evaluate(`document.querySelector('[data-mode=summary]').click(); true`);

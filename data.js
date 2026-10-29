@@ -1156,6 +1156,6 @@ window.WRITING_EXAMPLE = {
 
 // チュートリアル動画（縦1080×1920・音声：VOICEVOX:冥鳴ひまり）。intro＝使い方の画面／example＝例題の「▶ 解き方の動画」
 window.WRITING_VIDEOS = {
-  intro: { src: "videos/tutorial_app.mp4", poster: "videos/tutorial_app.jpg", title: "▶ アプリの使い方・ログインの仕方" },
-  example: { src: "videos/tutorial_example.mp4", poster: "videos/tutorial_example.jpg", title: "▶ 例題の解き方" }
+  intro: { src: "videos/tutorial_app.mp4?v=2", poster: "videos/tutorial_app.jpg?v=2", title: "▶ アプリの使い方・ログインの仕方" },
+  example: { src: "videos/tutorial_example.mp4?v=2", poster: "videos/tutorial_example.jpg?v=2", title: "▶ 例題の解き方" }
 };
