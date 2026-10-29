@@ -240,6 +240,8 @@
       const target = event.target;
       if (target.closest("[data-open-phrases]")) openModal("phrases-modal");
       if (target.closest("[data-open-tutorial]")) openModal("tutorial-modal");
+      const videoButton = target.closest("[data-open-video]");
+      if (videoButton) openVideo(videoButton.dataset.openVideo);
       const close = target.closest("[data-close-modal]");
       if (close) closeModal(close.dataset.closeModal);
       if (target.classList && target.classList.contains("modal-overlay")) closeModal(target.id);

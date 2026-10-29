@@ -79,6 +79,11 @@ try {
   await evaluate(`localStorage.clear(); true`);
   await shot("01_login");
   check(true, "ログイン画面が出る");
+  await evaluate(`document.querySelector('[data-open-video="intro"]').click(); true`);
+  await waitFor(`(() => { const v = document.querySelector('#video-player'); return !document.querySelector('#video-modal').classList.contains('hidden') && v.readyState >= 1 && v.duration > 30; })()`, "ログイン前の使い方の動画", 20000);
+  check(await evaluate(`document.querySelector('#video-player').src.endsWith('videos/tutorial_app.mp4') && document.querySelector('#video-modal .modal-title').textContent.includes('ログインの仕方')`), "ログイン前に「アプリの使い方・ログインの仕方」の動画が見られる");
+  await shot("01b_login_video");
+  await evaluate(`document.querySelector('[data-close-modal="video-modal"]').click(); true`);
 
   await evaluate(`document.querySelector('#btn-demo-login').click(); true`);
   await waitFor(`document.querySelector('#screen-home.active') && document.querySelectorAll('.topic-card').length > 0`, "トピック一覧");

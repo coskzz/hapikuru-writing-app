@@ -26,7 +26,7 @@
 
 ## チュートリアル動画
 
-- `videos/tutorial_app.mp4`（使い方・58秒）＝使い方の画面（初回に自動で開く／「使い方」ボタン）。`videos/tutorial_example.mp4`（例題の解き方・90秒）＝例題の「▶ 解き方の動画」。登録は `data.js` の `WRITING_VIDEOS`
+- `videos/tutorial_app.mp4`（使い方・58秒）＝使い方の画面（初回に自動で開く／「使い方」ボタン）と、ログイン画面の帯の「▶ アプリの使い方・ログインの仕方」（ログイン前に見られる。`data-open-video="intro"` → `openVideo`）。`videos/tutorial_example.mp4`（例題の解き方・90秒）＝例題の「▶ 解き方の動画」。登録は `data.js` の `WRITING_VIDEOS`
 - 作り直しは `~/hapikuru-tutorial-video`（Remotion。手順は同フォルダの README）。アプリの画面を変えたら、動画も撮り直す
 - 例題（`WRITING_EXAMPLE`）：デモのときだけ見本の添削結果を返す。動画2はこの見本で撮っている
 
